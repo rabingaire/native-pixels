@@ -1,0 +1,97 @@
+--- before/src/renderer.odin
++++ after/src/renderer.odin
+@@ -38,6 +38,7 @@
+     if pass == nil { return false }
+     defer wgpu.RenderPassEncoderRelease(pass)
+     wgpu.RenderPassEncoderSetPipeline(pass, renderer.pipeline)
++    wgpu.RenderPassEncoderSetVertexBuffer(pass, 0, renderer.vertex_buffer, 0, size_of(VERTICES))
+     wgpu.RenderPassEncoderDraw(pass, 3, 1, 0, 0)
+     wgpu.RenderPassEncoderEnd(pass)
+     commands := wgpu.CommandEncoderFinish(encoder, &wgpu.CommandBufferDescriptor{label = "finished frame"})
+@@ -52,11 +53,32 @@
+     return !gpu_failed()
+ }
+ 
++Vertex :: struct {
++    position: [2]f32,
++    color: [4]f32,
++}
++#assert(size_of(Vertex) == 24)
++#assert(offset_of(Vertex, position) == 0)
++#assert(offset_of(Vertex, color) == 8)
++
++VERTICES :: [3]Vertex{
++    {{-0.6, -0.5}, {1, 0.1, 0.1, 1}},
++    {{ 0.6, -0.5}, {0.1, 1, 0.1, 1}},
++    {{ 0.0,  0.6}, {0.1, 0.1, 1, 1}},
++}
++
+ Renderer :: struct {
+     pipeline: wgpu.RenderPipeline,
++    vertex_buffer: wgpu.Buffer,
+ }
+ 
+ renderer_init :: proc(renderer: ^Renderer, gpu: ^GPU) -> bool {
++    renderer.vertex_buffer = wgpu.DeviceCreateBuffer(gpu.device, &wgpu.BufferDescriptor{
++        label = "character vertices", size = size_of(VERTICES), usage = {.Vertex, .CopyDst},
++    })
++    if renderer.vertex_buffer == nil { return false }
++    vertices := VERTICES
++    wgpu.QueueWriteBuffer(gpu.queue, renderer.vertex_buffer, 0, &vertices, size_of(vertices))
+     source := wgpu.ShaderSourceWGSL{
+         chain = {sType = .ShaderSourceWGSL}, code = #load("../shaders/character.wgsl", string),
+     }
+@@ -73,9 +95,17 @@
+     defer wgpu.PipelineLayoutRelease(layout)
+     target := wgpu.ColorTargetState{format = gpu.config.format, writeMask = {.Red, .Green, .Blue, .Alpha}}
+     fragment := wgpu.FragmentState{module = shader, entryPoint = "fs_main", targetCount = 1, targets = &target}
++    attributes := [2]wgpu.VertexAttribute{
++        {format = .Float32x2, offset = u64(offset_of(Vertex, position)), shaderLocation = 0},
++        {format = .Float32x4, offset = u64(offset_of(Vertex, color)), shaderLocation = 1},
++    }
++    vertex_layout := wgpu.VertexBufferLayout{
++        arrayStride = size_of(Vertex), stepMode = .Vertex,
++        attributeCount = len(attributes), attributes = raw_data(attributes[:]),
++    }
+     descriptor := wgpu.RenderPipelineDescriptor{
+         label = "character pipeline", layout = layout,
+-        vertex = {module = shader, entryPoint = "vs_main"},
++        vertex = {module = shader, entryPoint = "vs_main", bufferCount = 1, buffers = &vertex_layout},
+         fragment = &fragment,
+         primitive = {topology = .TriangleList, frontFace = .CCW, cullMode = .None},
+         multisample = {count = 1, mask = 0xffffffff},
+@@ -85,6 +115,7 @@
+ }
+ 
+ renderer_destroy :: proc(renderer: ^Renderer) {
++    if renderer.vertex_buffer != nil { wgpu.BufferRelease(renderer.vertex_buffer) }
+     if renderer.pipeline != nil { wgpu.RenderPipelineRelease(renderer.pipeline) }
+     renderer^ = {}
+ }
+--- before/shaders/character.wgsl
++++ after/shaders/character.wgsl
+@@ -1,12 +1,17 @@
++struct Vertex_Out {
++    @builtin(position) clip_position: vec4f,
++    @location(0) color: vec4f,
++}
++
+ @vertex
+-fn vs_main(@builtin(vertex_index) index: u32) -> @builtin(position) vec4f {
+-    let positions = array<vec2f, 3>(
+-        vec2f(-0.6, -0.5), vec2f(0.6, -0.5), vec2f(0.0, 0.6)
+-    );
+-    return vec4f(positions[index], 0.0, 1.0);
++fn vs_main(@location(0) position: vec2f, @location(1) color: vec4f) -> Vertex_Out {
++    var out: Vertex_Out;
++    out.clip_position = vec4f(position, 0.0, 1.0);
++    out.color = color;
++    return out;
+ }
+ 
+ @fragment
+-fn fs_main() -> @location(0) vec4f {
+-    return vec4f(0.12, 0.78, 0.55, 1.0);
++fn fs_main(in: Vertex_Out) -> @location(0) vec4f {
++    return in.color;
+ }

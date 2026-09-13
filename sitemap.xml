@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://rabingaire.com.np/native-pixels/</loc></url>
+  <url><loc>https://rabingaire.com.np/native-pixels/contents.html</loc></url>
+  <url><loc>https://rabingaire.com.np/native-pixels/chapters/01-a-small-program.html</loc></url>
+  <url><loc>https://rabingaire.com.np/native-pixels/chapters/02-a-window-belongs-to-sdl.html</loc></url>
+  <url><loc>https://rabingaire.com.np/native-pixels/chapters/03-triangles-become-pixels.html</loc></url>
+  <url><loc>https://rabingaire.com.np/native-pixels/chapters/04-instance-and-surface.html</loc></url>
+  <url><loc>https://rabingaire.com.np/native-pixels/chapters/05-adapter-device-queue.html</loc></url>
+  <url><loc>https://rabingaire.com.np/native-pixels/chapters/06-negotiate-the-images.html</loc></url>
+  <url><loc>https://rabingaire.com.np/native-pixels/chapters/07-one-clear-frame.html</loc></url>
+  <url><loc>https://rabingaire.com.np/native-pixels/chapters/08-the-first-triangle.html</loc></url>
+  <url><loc>https://rabingaire.com.np/native-pixels/chapters/09-vertex-bytes.html</loc></url>
+  <url><loc>https://rabingaire.com.np/native-pixels/chapters/10-four-corners-six-indices.html</loc></url>
+  <url><loc>https://rabingaire.com.np/native-pixels/chapters/11-coordinates-for-humans.html</loc></url>
+  <url><loc>https://rabingaire.com.np/native-pixels/chapters/12-uniforms-and-bindings.html</loc></url>
+  <url><loc>https://rabingaire.com.np/native-pixels/chapters/13-resize-without-stretching.html</loc></url>
+  <url><loc>https://rabingaire.com.np/native-pixels/chapters/14-give-it-game-state.html</loc></url>
+  <url><loc>https://rabingaire.com.np/native-pixels/chapters/15-movement-in-seconds.html</loc></url>
+  <url><loc>https://rabingaire.com.np/native-pixels/chapters/16-color-alpha-character.html</loc></url>
+  <url><loc>https://rabingaire.com.np/native-pixels/chapters/17-lifetimes-and-debugging.html</loc></url>
+  <url><loc>https://rabingaire.com.np/native-pixels/chapters/18-from-main-to-pixels.html</loc></url>
+  <url><loc>https://rabingaire.com.np/native-pixels/chapters/19-pixels-from-a-picture.html</loc></url>
+  <url><loc>https://rabingaire.com.np/native-pixels/chapters/20-a-renderer-the-game-can-use.html</loc></url>
+  <url><loc>https://rabingaire.com.np/native-pixels/chapters/21-solid-furniture.html</loc></url>
+  <url><loc>https://rabingaire.com.np/native-pixels/chapters/22-finish-with-evidence.html</loc></url>
+  <url><loc>https://rabingaire.com.np/native-pixels/chapters/23-a-character-that-walks.html</loc></url>
+  <url><loc>https://rabingaire.com.np/native-pixels/appendix/final-source.html</loc></url>
+  <url><loc>https://rabingaire.com.np/native-pixels/appendix/build.html</loc></url>
+  <url><loc>https://rabingaire.com.np/native-pixels/appendix/glossary.html</loc></url>
+  <url><loc>https://rabingaire.com.np/native-pixels/appendix/cheat-sheets.html</loc></url>
+  <url><loc>https://rabingaire.com.np/native-pixels/appendix/sources.html</loc></url>
+</urlset>

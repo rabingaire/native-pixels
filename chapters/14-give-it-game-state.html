@@ -1,0 +1,650 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="description" content="The renderer knows how to draw a position. The game decides which position and color to draw."><meta name="author" content="Rabin Gaire"><title>Give the program game state — Native Pixels</title><link rel="canonical" href="https://rabingaire.com.np/native-pixels/chapters/14-give-it-game-state.html"><link rel="sitemap" type="application/xml" href="../sitemap.xml"><meta property="og:type" content="article"><meta property="og:site_name" content="Native Pixels"><meta property="og:locale" content="en_US"><meta property="og:title" content="Give the program game state — Native Pixels"><meta property="og:description" content="The renderer knows how to draw a position. The game decides which position and color to draw."><meta property="og:url" content="https://rabingaire.com.np/native-pixels/chapters/14-give-it-game-state.html"><meta property="og:image" content="https://rabingaire.com.np/native-pixels/assets/room-gameplay.png"><meta property="og:image:alt" content="Pixel-art room rendered with native WebGPU, Odin, and SDL3"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Give the program game state — Native Pixels"><meta name="twitter:description" content="The renderer knows how to draw a position. The game decides which position and color to draw."><meta name="twitter:image" content="https://rabingaire.com.np/native-pixels/assets/room-gameplay.png"><script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Book","@id":"https://rabingaire.com.np/native-pixels/#book","name":"Native Pixels","url":"https://rabingaire.com.np/native-pixels/","description":"Learn native 2D WebGPU with Odin and SDL3 in 23 chapters. Build a pixel-art game with sprite animation, collision, and complete runnable source.","inLanguage":"en","isAccessibleForFree":true,"author":{"@type":"Person","name":"Rabin Gaire"},"license":"https://rabingaire.com.np/native-pixels/LICENSE","image":"https://rabingaire.com.np/native-pixels/assets/room-gameplay.png"},{"@type":"Chapter","@id":"https://rabingaire.com.np/native-pixels/chapters/14-give-it-game-state.html","url":"https://rabingaire.com.np/native-pixels/chapters/14-give-it-game-state.html","name":"Give the program game state","description":"The renderer knows how to draw a position. The game decides which position and color to draw.","inLanguage":"en","isPartOf":{"@id":"https://rabingaire.com.np/native-pixels/#book"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Native Pixels","item":"https://rabingaire.com.np/native-pixels/"},{"@type":"ListItem","position":2,"name":"Give the program game state","item":"https://rabingaire.com.np/native-pixels/chapters/14-give-it-game-state.html"}]}]}</script><script>try{const theme=localStorage.getItem("native-pixels-theme");if(theme==="light"||theme==="dark")document.documentElement.dataset.theme=theme;}catch{}</script><link rel="stylesheet" href="../assets/style.css"><script defer src="../assets/book.js"></script></head>
+<body id="top" class="reading-page"><a class="skip-link" href="#main">Skip to content</a><div class="reading-progress" aria-hidden="true"></div><aside class="book-rail"><a class="wordmark" href="../index.html"><span class="brand-mark" aria-hidden="true">▰</span><span>Native Pixels<span class="edition">ODIN / SDL3 / WEBGPU</span></span></a><nav class="rail-primary" aria-label="Book navigation"><a class="rail-link" href="../index.html"><span class="rail-label">Overview</span></a><a class="rail-link" href="../contents.html"><span class="rail-label">All chapters</span></a><a class="rail-link" href="../appendix/build.html"><span class="rail-label">Build the game</span></a></nav><div class="rail-context"><p class="rail-kicker">Chapter 14</p><a class="rail-title" href="#top">Give the program game state</a><nav class="rail-sections" aria-label="Chapter sections"><a class="rail-link numbered" href="#section-1"><span class="rail-index">14.1</span><span class="rail-label">State remembers; input requests; rendering shows</span></a><a class="rail-link numbered" href="#section-2"><span class="rail-index">14.2</span><span class="rail-label">Put meaning on the CPU side</span></a><a class="rail-link numbered" href="#section-3"><span class="rail-index">14.3</span><span class="rail-label">Held keys are state, not repeated key-down events</span></a><a class="rail-link numbered" href="#section-4"><span class="rail-index">14.4</span><span class="rail-label">First prove the path with color</span></a><a class="rail-link numbered" href="#section-5"><span class="rail-index">14.5</span><span class="rail-label">Why this loop order works</span></a><a class="rail-link numbered" href="#section-6"><span class="rail-index">14.6</span><span class="rail-label">When this work happens</span></a><a class="rail-link numbered" href="#section-7"><span class="rail-index">14.7</span><span class="rail-label">Read the symptom, test a hypothesis</span></a><a class="rail-link numbered" href="#section-8"><span class="rail-index">14.8</span><span class="rail-label">Experiments</span></a><a class="rail-link numbered" href="#section-9"><span class="rail-index">14.9</span><span class="rail-label">What we have now</span></a><a class="rail-link numbered" href="#section-10"><span class="rail-index">14.10</span><span class="rail-label">Challenges</span></a><a class="rail-link numbered" href="#section-11"><span class="rail-index">14.11</span><span class="rail-label">Exact code changes and runnable checkpoint</span></a></nav><div class="rail-prev-next"><a href="../chapters/13-resize-without-stretching.html">← Previous</a><a href="../chapters/15-movement-in-seconds.html">Next →</a></div></div><div class="rail-reference"><p class="rail-kicker">Keep nearby</p><nav aria-label="Reference pages"><a class="rail-link" href="../appendix/final-source.html"><span class="rail-label">Complete final source</span></a><a class="rail-link" href="../appendix/glossary.html"><span class="rail-label">Glossary</span></a><a class="rail-link" href="../appendix/cheat-sheets.html"><span class="rail-label">Initialization, frame, and lifetime sheets</span></a><a class="rail-link" href="../appendix/sources.html"><span class="rail-label">Sources and verification record</span></a></nav></div></aside><div class="page-shell"><header class="topbar"><div class="breadcrumb"><a href="../index.html">Native Pixels</a><span aria-hidden="true">/</span><span>Chapter 14</span></div><div class="reader-controls"><button type="button" class="theme-toggle" hidden aria-label="Change color theme">Theme</button><button type="button" class="focus-toggle" hidden aria-pressed="false">Focus</button><a class="mobile-contents" href="../contents.html">Contents</a></div></header><main id="main" tabindex="-1"><article class="chapter"><header class="chapter-header"><span class="chapter-display-number" aria-hidden="true">14</span><p class="eyebrow">IV · Move one character <span>Chapter 14 / 23</span></p><h1>Give the program game state</h1><p class="deck">The renderer knows how to draw a position. The game decides which position and color to draw.</p><p class="reading-meta">7 min read + implementation · checkpoint 14</p></header><aside class="callout outcome"><strong>At the end of this chapter</strong><p>Holding WASD or arrow keys changes the rectangle’s tint, proving the input-to-GPU path before movement.</p></aside><nav class="on-this-page" aria-label="On this page"><details><summary>In this chapter</summary><ol><li><a href="#section-1"><span>14.1</span> State remembers; input requests; rendering shows</a></li><li><a href="#section-2"><span>14.2</span> Put meaning on the CPU side</a></li><li><a href="#section-3"><span>14.3</span> Held keys are state, not repeated key-down events</a></li><li><a href="#section-4"><span>14.4</span> First prove the path with color</a></li><li><a href="#section-5"><span>14.5</span> Why this loop order works</a></li><li><a href="#section-6"><span>14.6</span> When this work happens</a></li><li><a href="#section-7"><span>14.7</span> Read the symptom, test a hypothesis</a></li><li><a href="#section-8"><span>14.8</span> Experiments</a></li><li><a href="#section-9"><span>14.9</span> What we have now</a></li><li><a href="#section-10"><span>14.10</span> Challenges</a></li><li><a href="#section-11"><span>14.11</span> Exact code changes and runnable checkpoint</a></li></ol></details></nav><section class="learning-guide"><h2 id="section-1"><span class="section-number" aria-hidden="true">14.1</span>State remembers; input requests; rendering shows<a class="heading-link" href="#section-1" aria-label="Link to State remembers; input requests; rendering shows">#</a></h2><p>Game state is the information we preserve between iterations, such as position and tint. Input is this iteration’s request. Update applies rules to state using that request. Rendering reads the resulting values and makes an image. This separation means you can inspect or test a game update without needing to acquire a GPU image.</p><p>Held-key state answers “is D down now?” A key-down event answers “was D pressed?” Movement uses the first because it should continue while a key is held. Toggles use the second because repeating a toggle every frame would immediately switch it back again. Chapter 22 uses this distinction for F1.</p><p>We initially change only tint. That makes it easy to prove the path from SDL through game state into a uniform and onto the image. Movement needs elapsed time as well, so we introduce it in the next step after this input path works.</p></section><section><h2 id="section-2"><span class="section-number" aria-hidden="true">14.2</span>Put meaning on the CPU side<a class="heading-link" href="#section-2" aria-label="Link to Put meaning on the CPU side">#</a></h2><p>A WebGPU buffer contains values a shader needs. It should not be the only record of where the character is. Game state belongs to the CPU simulation, where input and movement rules can update it without depending on WebGPU handles. Rendering receives a snapshot of the values it needs and translates those into the uniform buffer.</p><p>Add <code>src/game.odin</code>. Its <code>Game</code> struct contains position, size, and tint. The file also contains a small SDL input adapter and the game update procedure; we do not create separate input classes or an event bus for four directions. The state and update parameters remain independent of WebGPU. <code>game_update</code> does not acquire images, create buffers, or know what a bind group is.</p><figure class="code-block"><figcaption>src/game.odin · Game ::</figcaption><pre><code class="language-odin">Game :: struct {
+    position: [2]f32,
+    size: [2]f32,
+    tint: [4]f32,
+}</code></pre></figure><p>Initialize <code>game</code> in <code>main</code> after renderer initialization with position (120,100), size (48,64), and white tint. The renderer no longer manufactures these values. Its arguments become <code>position</code>, <code>size</code>, <code>tint</code>, and <code>view_size</code> in addition to its connection and resource owners. This is a small explicit boundary, not a renderer tied to the entire Game struct.</p></section><section><h2 id="section-3"><span class="section-number" aria-hidden="true">14.3</span>Held keys are state, not repeated key-down events<a class="heading-link" href="#section-3" aria-label="Link to Held keys are state, not repeated key-down events">#</a></h2><figure class="code-block"><figcaption>src/game.odin · read_movement ::</figcaption><pre><code class="language-odin">read_movement :: proc(window: ^sdl.Window) -&gt; [2]f32 {
+    if !(.INPUT_FOCUS in sdl.GetWindowFlags(window)) { return {} }
+    keys := sdl.GetKeyboardState(nil)
+    direction: [2]f32
+    if keys[sdl.Scancode.D] || keys[sdl.Scancode.RIGHT] { direction.x += 1 }
+    if keys[sdl.Scancode.A] || keys[sdl.Scancode.LEFT]  { direction.x -= 1 }
+    if keys[sdl.Scancode.S] || keys[sdl.Scancode.DOWN]  { direction.y += 1 }
+    if keys[sdl.Scancode.W] || keys[sdl.Scancode.UP]    { direction.y -= 1 }
+    return direction
+}</code></pre></figure><p>Call this after draining SDL events. <code>GetKeyboardState(nil)</code> returns a pointer to SDL’s keyboard-state array, whose lifetime SDL manages. We read it during this iteration and never free or modify it. The scancode enum indexes physical key positions. This is appropriate for movement controls; text entry would use different SDL facilities. W and the up arrow both contribute negative y, because our logical game coordinates increase downward.</p><p>The horizontal axis adds one for right and subtracts one for left. Opposite directions cancel. Testing D or the right arrow with a boolean OR means holding both does not double speed. Keyboard auto-repeat is irrelevant: a held key is sampled as down each iteration. A very short press and release both processed before sampling might not be observed as held; discrete actions such as “jump once” often use key-down events instead. Our movement needs continuous held state.</p><p>When the window lacks input focus, return zero direction. This prevents the character from continuing under an input state sampled while another window is active. SDL continues to own focus and event handling. We do not poll platform-specific keyboard APIs behind its back.</p></section><section><h2 id="section-4"><span class="section-number" aria-hidden="true">14.4</span>First prove the path with color<a class="heading-link" href="#section-4" aria-label="Link to First prove the path with color">#</a></h2><figure class="code-block"><figcaption>src/game.odin · game_update ::</figcaption><pre><code class="language-odin">game_update :: proc(game: ^Game, direction: [2]f32) {
+    // Temporary input proof: color changes while any movement key is held.
+    game.tint = {1, 1, 1, 1}
+    if direction.x != 0 || direction.y != 0 { game.tint = {1, 0.35, 0.35, 1} }
+}</code></pre></figure><p>This update intentionally does not move anything yet. It sets a visible tint while a nonzero direction is held. A stationary colored rectangle is easier to diagnose than a moving object with a broken time unit. The next chapter removes this temporary tint-only update and replaces it with delta-time movement. Do not carry both updates forward accidentally.</p><p>Move the logical window-size query from <code>renderer_frame</code> to <code>main</code>, after event processing. Main now needs that extent to coordinate update and render. Remove <code>core:c</code> from renderer imports and add it to main. The physical framebuffer-size query remains in <code>gpu_refresh_surface</code> because it configures GPU presentation. Nothing changes in the uniform byte layout or bind group.</p><figure class="code-block"><figcaption>src/main.odin · main loop · add input and update before rendering</figcaption><pre><code class="language-odin">width, height: c.int
+        if !sdl.GetWindowSize(window, &amp;width, &amp;height) { break }
+        if width &lt;= 0 || height &lt;= 0 || .MINIMIZED in sdl.GetWindowFlags(window) {
+            sdl.Delay(10)
+            continue
+        }
+        view_size := [2]f32{f32(width), f32(height)}
+        direction := read_movement(window)
+        game_update(&amp;game, direction)</code></pre></figure><figure class="code-block"><figcaption>src/main.odin · main loop · replace the render call</figcaption><pre><code class="language-odin">if !renderer_frame(&amp;gpu, window, &amp;renderer, game.position, game.size, game.tint, view_size) { break }</code></pre></figure><p>Inside <code>renderer_frame</code>, replace fixed uniform position, size, tint, and view extent with those parameters. The camera stays zero. The shader still multiplies vertex color by tint, so the changed CPU game value reaches the fragment output through the existing uniform upload and interpolation path.</p></section><section><h2 id="section-5"><span class="section-number" aria-hidden="true">14.5</span>Why this loop order works<a class="heading-link" href="#section-5" aria-label="Link to Why this loop order works">#</a></h2><figure class="diagram flow-diagram"><ol aria-label="Each frame uses state derived from the latest processed input."><li>SDL events</li><li>Keyboard state</li><li>Game update</li><li>Uniform write</li><li>Draw / present</li></ol><figcaption>Each frame uses state derived from the latest processed input.</figcaption></figure><p>Processing events first makes the keyboard sample current and observes shutdown before further work. Updating next establishes the game state for this iteration. Rendering afterward presents that updated state. If render ran before update, the visible image would lag one simulation iteration behind the sampled input. The GPU may still execute asynchronously, but the CPU’s intended data ordering is now straightforward.</p><p>A render skip does not inherently mean game state must freeze. This chapter skips update when the logical extent is zero or the window is minimized, because our world is the visible window and there is nothing useful to interact with then. Surface timeouts can skip only presentation. The next chapter will ensure that neither case creates a large accumulated time step when drawing resumes.</p></section><section><h2 id="section-6"><span class="section-number" aria-hidden="true">14.6</span>When this work happens<a class="heading-link" href="#section-6" aria-label="Link to When this work happens">#</a></h2><div class="table-scroll"><table><thead><tr><th scope="col">Operation</th><th scope="col">Frequency</th><th scope="col">Reason</th></tr></thead><tbody><tr><td>Read held keys</td><td>Each active iteration after events</td><td>Convert SDL state to a direction vector</td></tr><tr><td>Update game tint</td><td>Each active iteration, temporarily</td><td>Prove input reaches the render data</td></tr><tr><td>Upload uniforms</td><td>Each rendered frame</td><td>Copy the current game snapshot to the GPU</td></tr><tr><td>Create bind group or pipeline</td><td>No change</td><td>Changing content is not changing an interface</td></tr></tbody></table></div></section><section><h2 id="section-7"><span class="section-number" aria-hidden="true">14.7</span>Read the symptom, test a hypothesis<a class="heading-link" href="#section-7" aria-label="Link to Read the symptom, test a hypothesis">#</a></h2><div class="table-scroll"><table><thead><tr><th scope="col">Symptom</th><th scope="col">What to inspect</th><th scope="col">Why it matters</th></tr></thead><tbody><tr><td>No response to a held key</td><td>Focus and polling order before GetKeyboardState</td><td>Keyboard state is maintained by SDL event processing</td></tr><tr><td>Game tint changes in a log but not on screen</td><td>Renderer parameters and uniform assignment</td><td>A stale literal can disconnect game state from rendering</td></tr><tr><td>Color remains changed after release</td><td>Resetting tint before the conditional each update</td><td>A per-frame proof should reflect current input, not remembered input</td></tr></tbody></table></div></section><section><h2 id="section-8"><span class="section-number" aria-hidden="true">14.8</span>Experiments<a class="heading-link" href="#section-8" aria-label="Link to Experiments">#</a></h2><p>These short, optional checks help you test the explanation. Predict the result first, then run the program. Restore the chapter’s baseline before continuing; later chapters assume the supplied checkpoint.</p><ol><li>Hold opposite directions. The tint should return to its neutral state because the direction sums to zero.</li><li>Hold D and the right arrow together. Verify that the computed x direction is still one.</li><li>Temporarily change the tint in main after update. Explain why that value wins for this frame’s render snapshot.</li></ol></section><section><h2 id="section-9"><span class="section-number" aria-hidden="true">14.9</span>What we have now<a class="heading-link" href="#section-9" aria-label="Link to What we have now">#</a></h2><p>Holding WASD or arrow keys changes the rectangle’s tint, proving the input-to-GPU path before movement.</p><p>Before moving on, run this checkpoint and compare it with the stated result. If it differs, use the symptom table above or the complete files below to locate the missing step.</p><p>Run <code>odin run checkpoints/14/src</code> from the book root, with the SDL linker flags for your platform. <a href="../appendix/build.html">Dependency and build instructions →</a></p></section><section class="challenges"><h2 id="section-10"><span class="section-number" aria-hidden="true">14.10</span>Challenges<a class="heading-link" href="#section-10" aria-label="Link to Challenges">#</a></h2><p class="challenge-intro">Optional extensions. The complete game in chapter 23 requires none of these. Work in a separate copy if you want to explore; the next chapter starts from this chapter’s supplied baseline.</p><ol><li><h3>A reset action</h3><p>Use a nonrepeated key-down event to request resetting the character to its initial position. Apply the request in game update.</p><p class="challenge-check"><strong>Check your result:</strong> Holding the key does not repeatedly reset future movement, and rendering does not mutate game state.</p></li><li><h3>A selectable appearance</h3><p>Add a small palette index to game state and cycle it with a discrete key press. Derive the tint from that index.</p><p class="challenge-check"><strong>Check your result:</strong> The selected appearance remains after release and survives a resize.</p></li></ol></section><section><h2 id="section-11"><span class="section-number" aria-hidden="true">14.11</span>Exact code changes and runnable checkpoint<a class="heading-link" href="#section-11" aria-label="Link to Exact code changes and runnable checkpoint">#</a></h2><div class="table-scroll"><table><thead><tr><th scope="col">File</th><th scope="col">Operation</th></tr></thead><tbody><tr><td><code>src/main.odin</code></td><td>Replace the changed portions shown below; preserve all other code</td></tr><tr><td><code>src/renderer.odin</code></td><td>Replace the changed portions shown below; preserve all other code</td></tr><tr><td><code>src/game.odin</code></td><td>Add this file</td></tr></tbody></table></div><details class="change-record"><summary>Exact patch from the preceding checkpoint</summary><p><a download href="../checkpoints/14/changes.patch">Download changes.patch</a> · inspect or apply with <code>patch -p1</code> from your own project directory at the previous checkpoint.</p><figure class="code-block"><pre><code class="language-diff">--- before/src/main.odin
++++ after/src/main.odin
+@@ -1,5 +1,6 @@
+ package character
+ import &quot;core:fmt&quot;
++import &quot;core:c&quot;
+ import sdl &quot;vendor:sdl3&quot;
+ import wgpu &quot;vendor:wgpu&quot;
+ 
+@@ -31,6 +32,7 @@
+     defer renderer_destroy(&amp;renderer)
+     if !renderer_init(&amp;renderer, &amp;gpu) { return }
+ 
++    game := Game{position = {120, 100}, size = {48, 64}, tint = {1, 1, 1, 1}}
+     running := true
+     for running {
+         event: sdl.Event
+@@ -43,6 +45,15 @@
+         if !running { break }
+         wgpu.InstanceProcessEvents(gpu.instance)
+         if gpu_failed() { break }
+-        if !renderer_frame(&amp;gpu, window, &amp;renderer) { break }
++        width, height: c.int
++        if !sdl.GetWindowSize(window, &amp;width, &amp;height) { break }
++        if width &lt;= 0 || height &lt;= 0 || .MINIMIZED in sdl.GetWindowFlags(window) {
++            sdl.Delay(10)
++            continue
++        }
++        view_size := [2]f32{f32(width), f32(height)}
++        direction := read_movement(window)
++        game_update(&amp;game, direction)
++        if !renderer_frame(&amp;gpu, window, &amp;renderer, game.position, game.size, game.tint, view_size) { break }
+     }
+ }
+--- before/src/renderer.odin
++++ after/src/renderer.odin
+@@ -1,18 +1,15 @@
+ package character
+ import &quot;core:fmt&quot;
+-import &quot;core:c&quot;
+ import sdl &quot;vendor:sdl3&quot;
+ import wgpu &quot;vendor:wgpu&quot;
+ 
+-renderer_frame :: proc(gpu: ^GPU, window: ^sdl.Window, renderer: ^Renderer) -&gt; bool {
++renderer_frame :: proc(gpu: ^GPU, window: ^sdl.Window, renderer: ^Renderer,
++                       position, size: [2]f32, tint: [4]f32, view_size: [2]f32) -&gt; bool {
+     if !gpu_refresh_surface(gpu, window) { sdl.Delay(10); return !gpu_failed() }
+-    width, height: c.int
+-    if !sdl.GetWindowSize(window, &amp;width, &amp;height) { return false }
+-    if width &lt;= 0 || height &lt;= 0 { sdl.Delay(10); return true }
+     uniforms := Uniforms{
+-        position = {120, 100}, size = {48, 64},
+-        view_size = {f32(width), f32(height)},
+-        camera = {0, 0}, tint = {1, 1, 1, 1},
++        position = position, size = size,
++        view_size = view_size,
++        camera = {0, 0}, tint = tint,
+     }
+     wgpu.QueueWriteBuffer(gpu.queue, renderer.uniform_buffer, 0, &amp;uniforms, size_of(uniforms))
+     frame := wgpu.SurfaceGetCurrentTexture(gpu.platform.surface)
+--- before/src/game.odin
++++ after/src/game.odin
+@@ -0,0 +1,25 @@
++package character
++import sdl &quot;vendor:sdl3&quot;
++
++Game :: struct {
++    position: [2]f32,
++    size: [2]f32,
++    tint: [4]f32,
++}
++
++read_movement :: proc(window: ^sdl.Window) -&gt; [2]f32 {
++    if !(.INPUT_FOCUS in sdl.GetWindowFlags(window)) { return {} }
++    keys := sdl.GetKeyboardState(nil)
++    direction: [2]f32
++    if keys[sdl.Scancode.D] || keys[sdl.Scancode.RIGHT] { direction.x += 1 }
++    if keys[sdl.Scancode.A] || keys[sdl.Scancode.LEFT]  { direction.x -= 1 }
++    if keys[sdl.Scancode.S] || keys[sdl.Scancode.DOWN]  { direction.y += 1 }
++    if keys[sdl.Scancode.W] || keys[sdl.Scancode.UP]    { direction.y -= 1 }
++    return direction
++}
++
++game_update :: proc(game: ^Game, direction: [2]f32) {
++    // Temporary input proof: color changes while any movement key is held.
++    game.tint = {1, 1, 1, 1}
++    if direction.x != 0 || direction.y != 0 { game.tint = {1, 0.35, 0.35, 1} }
++}</code></pre></figure></details><p>Complete end-of-chapter files follow. These are already present in <code>checkpoints/14/</code>; no assembly from excerpts is required.</p><details class="source-file"><summary>src/main.odin <span>59 lines</span></summary><p><a download href="../checkpoints/14/src/main.odin">Download this checkpoint’s src/main.odin</a></p><figure class="code-block"><figcaption>checkpoints/14/src/main.odin · complete file</figcaption><pre><code class="language-odin" data-source="checkpoints/14/src/main.odin">package character
+import &quot;core:fmt&quot;
+import &quot;core:c&quot;
+import sdl &quot;vendor:sdl3&quot;
+import wgpu &quot;vendor:wgpu&quot;
+
+main :: proc() {
+    if !sdl.Init({.VIDEO}) {
+        fmt.eprintln(&quot;SDL initialization:&quot;, sdl.GetError())
+        return
+    }
+    defer sdl.Quit()
+    flags: sdl.WindowFlags = {.RESIZABLE, .HIGH_PIXEL_DENSITY}
+    when ODIN_OS == .Darwin { flags += {.METAL} }
+    window := sdl.CreateWindow(&quot;Native Pixels&quot;, 960, 640, flags)
+    if window == nil {
+        fmt.eprintln(&quot;Window creation:&quot;, sdl.GetError())
+        return
+    }
+    defer sdl.DestroyWindow(window)
+    if !sdl.ShowWindow(window) {
+        fmt.eprintln(&quot;Show window:&quot;, sdl.GetError())
+        return
+    }
+    if !sdl.RaiseWindow(window) { fmt.eprintln(&quot;Window focus request:&quot;, sdl.GetError()) }
+
+    gpu: GPU
+    defer gpu_destroy(&amp;gpu)
+    if !gpu_init(&amp;gpu, window) { return }
+
+    renderer: Renderer
+    defer renderer_destroy(&amp;renderer)
+    if !renderer_init(&amp;renderer, &amp;gpu) { return }
+
+    game := Game{position = {120, 100}, size = {48, 64}, tint = {1, 1, 1, 1}}
+    running := true
+    for running {
+        event: sdl.Event
+        for sdl.PollEvent(&amp;event) {
+            #partial switch event.type {
+            case .QUIT, .WINDOW_CLOSE_REQUESTED: running = false
+            case .WINDOW_PIXEL_SIZE_CHANGED, .WINDOW_RESTORED: gpu.dirty = true
+            }
+        }
+        if !running { break }
+        wgpu.InstanceProcessEvents(gpu.instance)
+        if gpu_failed() { break }
+        width, height: c.int
+        if !sdl.GetWindowSize(window, &amp;width, &amp;height) { break }
+        if width &lt;= 0 || height &lt;= 0 || .MINIMIZED in sdl.GetWindowFlags(window) {
+            sdl.Delay(10)
+            continue
+        }
+        view_size := [2]f32{f32(width), f32(height)}
+        direction := read_movement(window)
+        game_update(&amp;game, direction)
+        if !renderer_frame(&amp;gpu, window, &amp;renderer, game.position, game.size, game.tint, view_size) { break }
+    }
+}
+</code></pre></figure></details><details class="source-file"><summary>src/platform.odin <span>73 lines</span></summary><p><a download href="../checkpoints/14/src/platform.odin">Download this checkpoint’s src/platform.odin</a></p><figure class="code-block"><figcaption>checkpoints/14/src/platform.odin · complete file</figcaption><pre><code class="language-odin" data-source="checkpoints/14/src/platform.odin">package character
+import &quot;core:fmt&quot;
+import sdl &quot;vendor:sdl3&quot;
+import wgpu &quot;vendor:wgpu&quot;
+
+// SDL owns the window. We own this extra Metal view, when one exists.
+Platform_Surface :: struct {
+    surface: wgpu.Surface,
+    metal_view: sdl.MetalView, // nil on Windows and Linux
+}
+
+platform_surface_create :: proc(instance: wgpu.Instance, window: ^sdl.Window) -&gt; Platform_Surface {
+    result: Platform_Surface
+    when ODIN_OS == .Darwin {
+        result.metal_view = sdl.Metal_CreateView(window)
+        if result.metal_view == nil {
+            fmt.eprintln(&quot;Metal view:&quot;, sdl.GetError())
+            return result
+        }
+        layer := sdl.Metal_GetLayer(result.metal_view)
+        if layer == nil { return result }
+        source := wgpu.SurfaceSourceMetalLayer{
+            chain = {sType = .SurfaceSourceMetalLayer}, layer = layer,
+        }
+        descriptor := wgpu.SurfaceDescriptor{nextInChain = &amp;source.chain, label = &quot;SDL Metal surface&quot;}
+        result.surface = wgpu.InstanceCreateSurface(instance, &amp;descriptor)
+    } else when ODIN_OS == .Windows {
+        properties := sdl.GetWindowProperties(window)
+        hwnd := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_WIN32_HWND_POINTER, nil)
+        instance_handle := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_WIN32_INSTANCE_POINTER, nil)
+        if hwnd == nil || instance_handle == nil { return result }
+        source := wgpu.SurfaceSourceWindowsHWND{
+            chain = {sType = .SurfaceSourceWindowsHWND}, hwnd = hwnd, hinstance = instance_handle,
+        }
+        descriptor := wgpu.SurfaceDescriptor{nextInChain = &amp;source.chain, label = &quot;SDL Win32 surface&quot;}
+        result.surface = wgpu.InstanceCreateSurface(instance, &amp;descriptor)
+    } else when ODIN_OS == .Linux {
+        properties := sdl.GetWindowProperties(window)
+        switch sdl.GetCurrentVideoDriver() {
+        case &quot;wayland&quot;:
+            display := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_WAYLAND_DISPLAY_POINTER, nil)
+            surface := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_WAYLAND_SURFACE_POINTER, nil)
+            if display == nil || surface == nil { return result }
+            source := wgpu.SurfaceSourceWaylandSurface{
+                chain = {sType = .SurfaceSourceWaylandSurface}, display = display, surface = surface,
+            }
+            descriptor := wgpu.SurfaceDescriptor{nextInChain = &amp;source.chain, label = &quot;SDL Wayland surface&quot;}
+            result.surface = wgpu.InstanceCreateSurface(instance, &amp;descriptor)
+        case &quot;x11&quot;:
+            display := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_X11_DISPLAY_POINTER, nil)
+            window_id := sdl.GetNumberProperty(properties, sdl.PROP_WINDOW_X11_WINDOW_NUMBER, 0)
+            if display == nil || window_id == 0 { return result }
+            source := wgpu.SurfaceSourceXlibWindow{
+                chain = {sType = .SurfaceSourceXlibWindow}, display = display, window = u64(window_id),
+            }
+            descriptor := wgpu.SurfaceDescriptor{nextInChain = &amp;source.chain, label = &quot;SDL X11 surface&quot;}
+            result.surface = wgpu.InstanceCreateSurface(instance, &amp;descriptor)
+        case:
+            fmt.eprintln(&quot;Unsupported SDL video driver:&quot;, sdl.GetCurrentVideoDriver())
+        }
+    } else {
+        #panic(&quot;This book targets macOS, Windows, and Linux desktop windows&quot;)
+    }
+    return result
+}
+
+platform_surface_destroy :: proc(platform: ^Platform_Surface) {
+    if platform.surface != nil { wgpu.SurfaceRelease(platform.surface) }
+    when ODIN_OS == .Darwin {
+        if platform.metal_view != nil { sdl.Metal_DestroyView(platform.metal_view) }
+    }
+    platform^ = {}
+}
+</code></pre></figure></details><details class="source-file"><summary>src/gpu.odin <span>173 lines</span></summary><p><a download href="../checkpoints/14/src/gpu.odin">Download this checkpoint’s src/gpu.odin</a></p><figure class="code-block"><figcaption>checkpoints/14/src/gpu.odin · complete file</figcaption><pre><code class="language-odin" data-source="checkpoints/14/src/gpu.odin">package character
+import &quot;core:fmt&quot;
+import &quot;core:c&quot;
+import &quot;base:runtime&quot;
+import &quot;base:intrinsics&quot;
+import sdl &quot;vendor:sdl3&quot;
+import wgpu &quot;vendor:wgpu&quot;
+
+GPU :: struct {
+    instance: wgpu.Instance,
+    platform: Platform_Surface,
+    adapter: wgpu.Adapter,
+    device: wgpu.Device,
+    queue: wgpu.Queue,
+    adapter_done, device_done: bool,
+    config: wgpu.SurfaceConfiguration,
+    configured, dirty: bool,
+    max_texture_dimension: u32,
+}
+
+gpu_init :: proc(gpu: ^GPU, window: ^sdl.Window) -&gt; bool {
+    gpu.instance = wgpu.CreateInstance(nil)
+    if gpu.instance == nil {
+        fmt.eprintln(&quot;Cannot create a WebGPU instance&quot;)
+        return false
+    }
+    gpu.platform = platform_surface_create(gpu.instance, window)
+    if gpu.platform.surface == nil {
+        fmt.eprintln(&quot;Cannot connect WebGPU to the SDL window&quot;)
+        return false
+    }
+    if !gpu_request_device(gpu) { return false }
+    if !gpu_choose_surface(gpu) { return false }
+    gpu.dirty = true
+    _ = gpu_refresh_surface(gpu, window)
+    return !gpu_failed()
+}
+
+gpu_destroy :: proc(gpu: ^GPU) {
+    if gpu.device != nil { _ = wgpu.DevicePoll(gpu.device, true, nil) }
+    if gpu.configured { wgpu.SurfaceUnconfigure(gpu.platform.surface) }
+    if gpu.queue != nil { wgpu.QueueRelease(gpu.queue) }
+    if gpu.device != nil { wgpu.DeviceRelease(gpu.device) }
+    if gpu.adapter != nil { wgpu.AdapterRelease(gpu.adapter) }
+    platform_surface_destroy(&amp;gpu.platform)
+    if gpu.instance != nil { wgpu.InstanceRelease(gpu.instance) }
+    gpu^ = {}
+}
+
+// Process-lifetime storage: native diagnostic callbacks may arrive on other threads.
+gpu_fault: bool
+
+gpu_failed :: proc() -&gt; bool { return intrinsics.atomic_load(&amp;gpu_fault) }
+
+adapter_ready :: proc &quot;c&quot; (status: wgpu.RequestAdapterStatus, adapter: wgpu.Adapter,
+                          message: wgpu.StringView, userdata1, userdata2: rawptr) {
+    context = runtime.default_context()
+    gpu := cast(^GPU)userdata1
+    gpu.adapter_done = true
+    if status == .Success { gpu.adapter = adapter }
+    else { fmt.eprintln(&quot;Adapter request:&quot;, status, message) }
+}
+
+device_ready :: proc &quot;c&quot; (status: wgpu.RequestDeviceStatus, device: wgpu.Device,
+                         message: wgpu.StringView, userdata1, userdata2: rawptr) {
+    context = runtime.default_context()
+    gpu := cast(^GPU)userdata1
+    gpu.device_done = true
+    if status == .Success { gpu.device = device }
+    else { fmt.eprintln(&quot;Device request:&quot;, status, message) }
+}
+
+device_lost :: proc &quot;c&quot; (device: ^wgpu.Device, reason: wgpu.DeviceLostReason,
+                        message: wgpu.StringView, userdata1, userdata2: rawptr) {
+    context = runtime.default_context()
+    if reason == .Destroyed { return }
+    fmt.eprintln(&quot;Device lost:&quot;, reason, message)
+    intrinsics.atomic_store(&amp;gpu_fault, true)
+}
+
+uncaptured_error :: proc &quot;c&quot; (device: ^wgpu.Device, error_type: wgpu.ErrorType,
+                             message: wgpu.StringView, userdata1, userdata2: rawptr) {
+    context = runtime.default_context()
+    fmt.eprintln(&quot;WebGPU error:&quot;, error_type, message)
+    intrinsics.atomic_store(&amp;gpu_fault, true)
+}
+
+gpu_request_device :: proc(gpu: ^GPU) -&gt; bool {
+    options := wgpu.RequestAdapterOptions{
+        compatibleSurface = gpu.platform.surface,
+        powerPreference = .HighPerformance,
+        featureLevel = .Core,
+    }
+    _ = wgpu.InstanceRequestAdapter(gpu.instance, &amp;options, {
+        mode = .AllowSpontaneos, callback = adapter_ready, userdata1 = gpu,
+    })
+    // Verified wgpu-native 29.0.1.1 behavior: these two request callbacks run inline.
+    // Do not carry this assumption to Dawn or to a later native implementation.
+    assert(gpu.adapter_done, &quot;Pinned wgpu-native request contract changed&quot;)
+    if gpu.adapter == nil { return false }
+    descriptor := wgpu.DeviceDescriptor{
+        label = &quot;2D device&quot;, defaultQueue = {label = &quot;2D queue&quot;},
+        deviceLostCallbackInfo = {mode = .AllowSpontaneos, callback = device_lost},
+        uncapturedErrorCallbackInfo = {callback = uncaptured_error},
+    }
+    _ = wgpu.AdapterRequestDevice(gpu.adapter, &amp;descriptor, {
+        mode = .AllowSpontaneos, callback = device_ready, userdata1 = gpu,
+    })
+    assert(gpu.device_done, &quot;Pinned wgpu-native request contract changed&quot;)
+    if gpu.device == nil { return false }
+    gpu.queue = wgpu.DeviceGetQueue(gpu.device)
+    return gpu.queue != nil &amp;&amp; !gpu_failed()
+}
+
+gpu_choose_surface :: proc(gpu: ^GPU) -&gt; bool {
+    caps, status := wgpu.SurfaceGetCapabilities(gpu.platform.surface, gpu.adapter)
+    if status != .Success {
+        fmt.eprintln(&quot;Surface capabilities unavailable:&quot;, status)
+        return false
+    }
+    defer wgpu.SurfaceCapabilitiesFreeMembers(caps)
+    format: wgpu.TextureFormat = .Undefined
+    for candidate in caps.formats[:caps.formatCount] {
+        if candidate == .BGRA8UnormSrgb || candidate == .RGBA8UnormSrgb {
+            format = candidate
+            break
+        }
+    }
+    if format == .Undefined || !(.RenderAttachment in caps.usages) {
+        fmt.eprintln(&quot;This example needs an sRGB RGBA/BGRA renderable surface&quot;)
+        return false
+    }
+    fifo := false
+    for mode in caps.presentModes[:caps.presentModeCount] {
+        if mode == .Fifo { fifo = true }
+    }
+    if !fifo { fmt.eprintln(&quot;Surface does not offer FIFO presentation&quot;); return false }
+    alpha: wgpu.CompositeAlphaMode = .Auto
+    for mode in caps.alphaModes[:caps.alphaModeCount] {
+        if mode == .Opaque { alpha = .Opaque }
+    }
+    limits, limit_status := wgpu.DeviceGetLimits(gpu.device)
+    if limit_status != .Success { return false }
+    gpu.max_texture_dimension = limits.maxTextureDimension2D
+    gpu.config = {
+        device = gpu.device, format = format, usage = {.RenderAttachment},
+        presentMode = .Fifo, alphaMode = alpha,
+    }
+    fmt.println(&quot;Surface format:&quot;, format)
+    return true
+}
+
+gpu_refresh_surface :: proc(gpu: ^GPU, window: ^sdl.Window) -&gt; bool {
+    if .MINIMIZED in sdl.GetWindowFlags(window) { return false }
+    width, height: c.int
+    if !sdl.GetWindowSizeInPixels(window, &amp;width, &amp;height) {
+        fmt.eprintln(&quot;Drawable size:&quot;, sdl.GetError())
+        intrinsics.atomic_store(&amp;gpu_fault, true)
+        return false
+    }
+    if width &lt;= 0 || height &lt;= 0 { return false }
+    if u32(width) &gt; gpu.max_texture_dimension || u32(height) &gt; gpu.max_texture_dimension {
+        return false
+    }
+    if gpu.dirty || !gpu.configured || gpu.config.width != u32(width) || gpu.config.height != u32(height) {
+        gpu.config.width = u32(width)
+        gpu.config.height = u32(height)
+        wgpu.SurfaceConfigure(gpu.platform.surface, &amp;gpu.config)
+        gpu.configured = !gpu_failed()
+        gpu.dirty = false
+    }
+    return gpu.configured
+}
+</code></pre></figure></details><details class="source-file"><summary>src/renderer.odin <span>176 lines</span></summary><p><a download href="../checkpoints/14/src/renderer.odin">Download this checkpoint’s src/renderer.odin</a></p><figure class="code-block"><figcaption>checkpoints/14/src/renderer.odin · complete file</figcaption><pre><code class="language-odin" data-source="checkpoints/14/src/renderer.odin">package character
+import &quot;core:fmt&quot;
+import sdl &quot;vendor:sdl3&quot;
+import wgpu &quot;vendor:wgpu&quot;
+
+renderer_frame :: proc(gpu: ^GPU, window: ^sdl.Window, renderer: ^Renderer,
+                       position, size: [2]f32, tint: [4]f32, view_size: [2]f32) -&gt; bool {
+    if !gpu_refresh_surface(gpu, window) { sdl.Delay(10); return !gpu_failed() }
+    uniforms := Uniforms{
+        position = position, size = size,
+        view_size = view_size,
+        camera = {0, 0}, tint = tint,
+    }
+    wgpu.QueueWriteBuffer(gpu.queue, renderer.uniform_buffer, 0, &amp;uniforms, size_of(uniforms))
+    frame := wgpu.SurfaceGetCurrentTexture(gpu.platform.surface)
+    // Release any returned handle on every exit path, including a failed acquisition.
+    defer if frame.texture != nil { wgpu.TextureRelease(frame.texture) }
+    #partial switch frame.status {
+    case .SuccessOptimal:
+    case .SuccessSuboptimal: gpu.dirty = true
+    case .Timeout, .Occluded: sdl.Delay(10); return true
+    case .Outdated: gpu.dirty = true; sdl.Delay(10); return true
+    case .Lost:
+        fmt.eprintln(&quot;Surface lost; close and restart this small example&quot;)
+        return false
+    case:
+        fmt.eprintln(&quot;Surface acquisition:&quot;, frame.status)
+        return false
+    }
+    if frame.texture == nil { fmt.eprintln(&quot;Successful acquisition without a texture&quot;); return false }
+    view := wgpu.TextureCreateView(frame.texture, nil)
+    if view == nil { return false }
+    defer wgpu.TextureViewRelease(view)
+    encoder := wgpu.DeviceCreateCommandEncoder(gpu.device, &amp;wgpu.CommandEncoderDescriptor{label = &quot;frame&quot;})
+    if encoder == nil { return false }
+    defer wgpu.CommandEncoderRelease(encoder)
+    attachment := wgpu.RenderPassColorAttachment{
+        view = view, depthSlice = wgpu.DEPTH_SLICE_UNDEFINED,
+        loadOp = .Clear, storeOp = .Store, clearValue = {0.018, 0.028, 0.048, 1},
+    }
+    pass_descriptor := wgpu.RenderPassDescriptor{
+        label = &quot;window color pass&quot;, colorAttachmentCount = 1, colorAttachments = &amp;attachment,
+    }
+    pass := wgpu.CommandEncoderBeginRenderPass(encoder, &amp;pass_descriptor)
+    if pass == nil { return false }
+    defer wgpu.RenderPassEncoderRelease(pass)
+    wgpu.RenderPassEncoderSetPipeline(pass, renderer.pipeline)
+    wgpu.RenderPassEncoderSetBindGroup(pass, 0, renderer.bind_group)
+    wgpu.RenderPassEncoderSetVertexBuffer(pass, 0, renderer.vertex_buffer, 0, size_of(VERTICES))
+    wgpu.RenderPassEncoderSetIndexBuffer(pass, renderer.index_buffer, .Uint16, 0, size_of(INDICES))
+    wgpu.RenderPassEncoderDrawIndexed(pass, 6, 1, 0, 0, 0)
+    wgpu.RenderPassEncoderEnd(pass)
+    commands := wgpu.CommandEncoderFinish(encoder, &amp;wgpu.CommandBufferDescriptor{label = &quot;finished frame&quot;})
+    if commands == nil { return false }
+    defer wgpu.CommandBufferRelease(commands)
+    if gpu_failed() { return false }
+    wgpu.QueueSubmit(gpu.queue, []wgpu.CommandBuffer{commands})
+    if wgpu.SurfacePresent(gpu.platform.surface) != .Success {
+        fmt.eprintln(&quot;Surface presentation failed&quot;)
+        return false
+    }
+    return !gpu_failed()
+}
+
+Vertex :: struct {
+    position: [2]f32,
+    color: [4]f32,
+}
+#assert(size_of(Vertex) == 24)
+#assert(offset_of(Vertex, position) == 0)
+#assert(offset_of(Vertex, color) == 8)
+
+VERTICES :: [4]Vertex{
+    {{0, 0}, {0.12, 0.78, 0.55, 1}},
+    {{1, 0}, {0.12, 0.78, 0.55, 1}},
+    {{1, 1}, {0.12, 0.78, 0.55, 1}},
+    {{0, 1}, {0.12, 0.78, 0.55, 1}},
+}
+INDICES :: [6]u16{0, 1, 2, 0, 2, 3}
+
+Uniforms :: struct #align(16) {
+    position: [2]f32,
+    size: [2]f32,
+    view_size: [2]f32,
+    camera: [2]f32,
+    tint: [4]f32,
+}
+#assert(size_of(Uniforms) == 48)
+#assert(offset_of(Uniforms, position) == 0)
+#assert(offset_of(Uniforms, size) == 8)
+#assert(offset_of(Uniforms, view_size) == 16)
+#assert(offset_of(Uniforms, camera) == 24)
+#assert(offset_of(Uniforms, tint) == 32)
+
+Renderer :: struct {
+    pipeline: wgpu.RenderPipeline,
+    vertex_buffer: wgpu.Buffer,
+    index_buffer: wgpu.Buffer,
+    uniform_buffer: wgpu.Buffer,
+    bind_group: wgpu.BindGroup,
+}
+
+renderer_init :: proc(renderer: ^Renderer, gpu: ^GPU) -&gt; bool {
+    renderer.vertex_buffer = wgpu.DeviceCreateBuffer(gpu.device, &amp;wgpu.BufferDescriptor{
+        label = &quot;character vertices&quot;, size = size_of(VERTICES), usage = {.Vertex, .CopyDst},
+    })
+    if renderer.vertex_buffer == nil { return false }
+    vertices := VERTICES
+    wgpu.QueueWriteBuffer(gpu.queue, renderer.vertex_buffer, 0, &amp;vertices, size_of(vertices))
+    renderer.index_buffer = wgpu.DeviceCreateBuffer(gpu.device, &amp;wgpu.BufferDescriptor{
+        label = &quot;quad indices&quot;, size = size_of(INDICES), usage = {.Index, .CopyDst},
+    })
+    if renderer.index_buffer == nil { return false }
+    indices := INDICES
+    wgpu.QueueWriteBuffer(gpu.queue, renderer.index_buffer, 0, &amp;indices, size_of(indices))
+    source := wgpu.ShaderSourceWGSL{
+        chain = {sType = .ShaderSourceWGSL}, code = #load(&quot;../shaders/character.wgsl&quot;, string),
+    }
+    shader := wgpu.DeviceCreateShaderModule(gpu.device, &amp;wgpu.ShaderModuleDescriptor{
+        label = &quot;character WGSL&quot;, nextInChain = &amp;source.chain,
+    })
+    if shader == nil { return false }
+    defer wgpu.ShaderModuleRelease(shader)
+    if gpu_failed() { return false }
+    renderer.uniform_buffer = wgpu.DeviceCreateBuffer(gpu.device, &amp;wgpu.BufferDescriptor{
+        label = &quot;character uniforms&quot;, size = size_of(Uniforms), usage = {.Uniform, .CopyDst},
+    })
+    if renderer.uniform_buffer == nil { return false }
+    binding_layout := wgpu.BindGroupLayoutEntry{
+        binding = 0, visibility = {.Vertex},
+        buffer = {type = .Uniform, minBindingSize = size_of(Uniforms)},
+    }
+    group_layout := wgpu.DeviceCreateBindGroupLayout(gpu.device, &amp;wgpu.BindGroupLayoutDescriptor{
+        label = &quot;character resource interface&quot;, entryCount = 1, entries = &amp;binding_layout,
+    })
+    if group_layout == nil { return false }
+    defer wgpu.BindGroupLayoutRelease(group_layout)
+    entry := wgpu.BindGroupEntry{binding = 0, buffer = renderer.uniform_buffer, offset = 0, size = size_of(Uniforms)}
+    renderer.bind_group = wgpu.DeviceCreateBindGroup(gpu.device, &amp;wgpu.BindGroupDescriptor{
+        label = &quot;character resources&quot;, layout = group_layout, entryCount = 1, entries = &amp;entry,
+    })
+    if renderer.bind_group == nil { return false }
+    layout := wgpu.DeviceCreatePipelineLayout(gpu.device, &amp;wgpu.PipelineLayoutDescriptor{
+        label = &quot;character pipeline interface&quot;, bindGroupLayoutCount = 1, bindGroupLayouts = &amp;group_layout,
+    })
+    if layout == nil { return false }
+    defer wgpu.PipelineLayoutRelease(layout)
+    target := wgpu.ColorTargetState{format = gpu.config.format, writeMask = {.Red, .Green, .Blue, .Alpha}}
+    fragment := wgpu.FragmentState{module = shader, entryPoint = &quot;fs_main&quot;, targetCount = 1, targets = &amp;target}
+    attributes := [2]wgpu.VertexAttribute{
+        {format = .Float32x2, offset = u64(offset_of(Vertex, position)), shaderLocation = 0},
+        {format = .Float32x4, offset = u64(offset_of(Vertex, color)), shaderLocation = 1},
+    }
+    vertex_layout := wgpu.VertexBufferLayout{
+        arrayStride = size_of(Vertex), stepMode = .Vertex,
+        attributeCount = len(attributes), attributes = raw_data(attributes[:]),
+    }
+    descriptor := wgpu.RenderPipelineDescriptor{
+        label = &quot;character pipeline&quot;, layout = layout,
+        vertex = {module = shader, entryPoint = &quot;vs_main&quot;, bufferCount = 1, buffers = &amp;vertex_layout},
+        fragment = &amp;fragment,
+        primitive = {topology = .TriangleList, frontFace = .CCW, cullMode = .None},
+        multisample = {count = 1, mask = 0xffffffff},
+    }
+    renderer.pipeline = wgpu.DeviceCreateRenderPipeline(gpu.device, &amp;descriptor)
+    return renderer.pipeline != nil &amp;&amp; !gpu_failed()
+}
+
+renderer_destroy :: proc(renderer: ^Renderer) {
+    if renderer.bind_group != nil { wgpu.BindGroupRelease(renderer.bind_group) }
+    if renderer.uniform_buffer != nil { wgpu.BufferRelease(renderer.uniform_buffer) }
+    if renderer.index_buffer != nil { wgpu.BufferRelease(renderer.index_buffer) }
+    if renderer.vertex_buffer != nil { wgpu.BufferRelease(renderer.vertex_buffer) }
+    if renderer.pipeline != nil { wgpu.RenderPipelineRelease(renderer.pipeline) }
+    renderer^ = {}
+}
+</code></pre></figure></details><details class="source-file"><summary>shaders/character.wgsl <span>29 lines</span></summary><p><a download href="../checkpoints/14/shaders/character.wgsl">Download this checkpoint’s shaders/character.wgsl</a></p><figure class="code-block"><figcaption>checkpoints/14/shaders/character.wgsl · complete file</figcaption><pre><code class="language-wgsl" data-source="checkpoints/14/shaders/character.wgsl">struct Uniforms {
+    position: vec2f,
+    size: vec2f,
+    view_size: vec2f,
+    camera: vec2f,
+    tint: vec4f,
+}
+@group(0) @binding(0) var&lt;uniform&gt; uniforms: Uniforms;
+
+struct Vertex_Out {
+    @builtin(position) clip_position: vec4f,
+    @location(0) color: vec4f,
+}
+
+@vertex
+fn vs_main(@location(0) position: vec2f, @location(1) color: vec4f) -&gt; Vertex_Out {
+    var out: Vertex_Out;
+    let pixel = uniforms.position + position * uniforms.size - uniforms.camera;
+    let ndc = vec2f(2.0 * pixel.x / uniforms.view_size.x - 1.0,
+                   1.0 - 2.0 * pixel.y / uniforms.view_size.y);
+    out.clip_position = vec4f(ndc, 0.0, 1.0);
+    out.color = color * uniforms.tint;
+    return out;
+}
+
+@fragment
+fn fs_main(in: Vertex_Out) -&gt; @location(0) vec4f {
+    return in.color;
+}
+</code></pre></figure></details><details class="source-file"><summary>src/game.odin <span>25 lines</span></summary><p><a download href="../checkpoints/14/src/game.odin">Download this checkpoint’s src/game.odin</a></p><figure class="code-block"><figcaption>checkpoints/14/src/game.odin · complete file</figcaption><pre><code class="language-odin" data-source="checkpoints/14/src/game.odin">package character
+import sdl &quot;vendor:sdl3&quot;
+
+Game :: struct {
+    position: [2]f32,
+    size: [2]f32,
+    tint: [4]f32,
+}
+
+read_movement :: proc(window: ^sdl.Window) -&gt; [2]f32 {
+    if !(.INPUT_FOCUS in sdl.GetWindowFlags(window)) { return {} }
+    keys := sdl.GetKeyboardState(nil)
+    direction: [2]f32
+    if keys[sdl.Scancode.D] || keys[sdl.Scancode.RIGHT] { direction.x += 1 }
+    if keys[sdl.Scancode.A] || keys[sdl.Scancode.LEFT]  { direction.x -= 1 }
+    if keys[sdl.Scancode.S] || keys[sdl.Scancode.DOWN]  { direction.y += 1 }
+    if keys[sdl.Scancode.W] || keys[sdl.Scancode.UP]    { direction.y -= 1 }
+    return direction
+}
+
+game_update :: proc(game: ^Game, direction: [2]f32) {
+    // Temporary input proof: color changes while any movement key is held.
+    game.tint = {1, 1, 1, 1}
+    if direction.x != 0 || direction.y != 0 { game.tint = {1, 0.35, 0.35, 1} }
+}
+</code></pre></figure></details></section><nav class="chapter-navigation" aria-label="Chapter navigation"><a href="../chapters/13-resize-without-stretching.html"><span>← Previous Chapter</span><small>Resize without stretching</small></a><a href="../contents.html">Contents</a><a href="../chapters/15-movement-in-seconds.html"><span>Next Chapter →</span><small>Movement measured in seconds</small></a></nav></article></main><footer class="page-footer"><span>Native Pixels · September 2026 edition</span><a href="../appendix/sources.html">Sources &amp; verification</a><a href="../LICENSE">MIT License</a><a href="#top">Back to top ↑</a></footer></div></body></html>

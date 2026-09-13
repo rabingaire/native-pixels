@@ -1,0 +1,100 @@
+--- before/src/gpu.odin
++++ after/src/gpu.odin
+@@ -1,5 +1,6 @@
+ package character
+ import "core:fmt"
++import "core:c"
+ import "base:runtime"
+ import "base:intrinsics"
+ import sdl "vendor:sdl3"
+@@ -12,6 +13,9 @@
+     device: wgpu.Device,
+     queue: wgpu.Queue,
+     adapter_done, device_done: bool,
++    config: wgpu.SurfaceConfiguration,
++    configured, dirty: bool,
++    max_texture_dimension: u32,
+ }
+ 
+ gpu_init :: proc(gpu: ^GPU, window: ^sdl.Window) -> bool {
+@@ -25,11 +29,16 @@
+         fmt.eprintln("Cannot connect WebGPU to the SDL window")
+         return false
+     }
+-    return gpu_request_device(gpu)
++    if !gpu_request_device(gpu) { return false }
++    if !gpu_choose_surface(gpu) { return false }
++    gpu.dirty = true
++    _ = gpu_refresh_surface(gpu, window)
++    return !gpu_failed()
+ }
+ 
+ gpu_destroy :: proc(gpu: ^GPU) {
+     if gpu.device != nil { _ = wgpu.DevicePoll(gpu.device, true, nil) }
++    if gpu.configured { wgpu.SurfaceUnconfigure(gpu.platform.surface) }
+     if gpu.queue != nil { wgpu.QueueRelease(gpu.queue) }
+     if gpu.device != nil { wgpu.DeviceRelease(gpu.device) }
+     if gpu.adapter != nil { wgpu.AdapterRelease(gpu.adapter) }
+@@ -102,3 +111,62 @@
+     gpu.queue = wgpu.DeviceGetQueue(gpu.device)
+     return gpu.queue != nil && !gpu_failed()
+ }
++
++gpu_choose_surface :: proc(gpu: ^GPU) -> bool {
++    caps, status := wgpu.SurfaceGetCapabilities(gpu.platform.surface, gpu.adapter)
++    if status != .Success {
++        fmt.eprintln("Surface capabilities unavailable:", status)
++        return false
++    }
++    defer wgpu.SurfaceCapabilitiesFreeMembers(caps)
++    format: wgpu.TextureFormat = .Undefined
++    for candidate in caps.formats[:caps.formatCount] {
++        if candidate == .BGRA8UnormSrgb || candidate == .RGBA8UnormSrgb {
++            format = candidate
++            break
++        }
++    }
++    if format == .Undefined || !(.RenderAttachment in caps.usages) {
++        fmt.eprintln("This example needs an sRGB RGBA/BGRA renderable surface")
++        return false
++    }
++    fifo := false
++    for mode in caps.presentModes[:caps.presentModeCount] {
++        if mode == .Fifo { fifo = true }
++    }
++    if !fifo { fmt.eprintln("Surface does not offer FIFO presentation"); return false }
++    alpha: wgpu.CompositeAlphaMode = .Auto
++    for mode in caps.alphaModes[:caps.alphaModeCount] {
++        if mode == .Opaque { alpha = .Opaque }
++    }
++    limits, limit_status := wgpu.DeviceGetLimits(gpu.device)
++    if limit_status != .Success { return false }
++    gpu.max_texture_dimension = limits.maxTextureDimension2D
++    gpu.config = {
++        device = gpu.device, format = format, usage = {.RenderAttachment},
++        presentMode = .Fifo, alphaMode = alpha,
++    }
++    fmt.println("Surface format:", format)
++    return true
++}
++
++gpu_refresh_surface :: proc(gpu: ^GPU, window: ^sdl.Window) -> bool {
++    width, height: c.int
++    if !sdl.GetWindowSizeInPixels(window, &width, &height) {
++        fmt.eprintln("Drawable size:", sdl.GetError())
++        intrinsics.atomic_store(&gpu_fault, true)
++        return false
++    }
++    if width <= 0 || height <= 0 { return false }
++    if u32(width) > gpu.max_texture_dimension || u32(height) > gpu.max_texture_dimension {
++        return false
++    }
++    if gpu.dirty || !gpu.configured || gpu.config.width != u32(width) || gpu.config.height != u32(height) {
++        gpu.config.width = u32(width)
++        gpu.config.height = u32(height)
++        wgpu.SurfaceConfigure(gpu.platform.surface, &gpu.config)
++        gpu.configured = !gpu_failed()
++        gpu.dirty = false
++    }
++    return gpu.configured
++}

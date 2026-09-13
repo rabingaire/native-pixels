@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="description" content="Join a portable graphics API to an actual desktop window without hiding the platform bridge."><meta name="author" content="Rabin Gaire"><title>Instance and surface — Native Pixels</title><link rel="canonical" href="https://rabingaire.com.np/native-pixels/chapters/04-instance-and-surface.html"><link rel="sitemap" type="application/xml" href="../sitemap.xml"><meta property="og:type" content="article"><meta property="og:site_name" content="Native Pixels"><meta property="og:locale" content="en_US"><meta property="og:title" content="Instance and surface — Native Pixels"><meta property="og:description" content="Join a portable graphics API to an actual desktop window without hiding the platform bridge."><meta property="og:url" content="https://rabingaire.com.np/native-pixels/chapters/04-instance-and-surface.html"><meta property="og:image" content="https://rabingaire.com.np/native-pixels/assets/room-gameplay.png"><meta property="og:image:alt" content="Pixel-art room rendered with native WebGPU, Odin, and SDL3"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Instance and surface — Native Pixels"><meta name="twitter:description" content="Join a portable graphics API to an actual desktop window without hiding the platform bridge."><meta name="twitter:image" content="https://rabingaire.com.np/native-pixels/assets/room-gameplay.png"><script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Book","@id":"https://rabingaire.com.np/native-pixels/#book","name":"Native Pixels","url":"https://rabingaire.com.np/native-pixels/","description":"Learn native 2D WebGPU with Odin and SDL3 in 23 chapters. Build a pixel-art game with sprite animation, collision, and complete runnable source.","inLanguage":"en","isAccessibleForFree":true,"author":{"@type":"Person","name":"Rabin Gaire"},"license":"https://rabingaire.com.np/native-pixels/LICENSE","image":"https://rabingaire.com.np/native-pixels/assets/room-gameplay.png"},{"@type":"Chapter","@id":"https://rabingaire.com.np/native-pixels/chapters/04-instance-and-surface.html","url":"https://rabingaire.com.np/native-pixels/chapters/04-instance-and-surface.html","name":"Instance and surface","description":"Join a portable graphics API to an actual desktop window without hiding the platform bridge.","inLanguage":"en","isPartOf":{"@id":"https://rabingaire.com.np/native-pixels/#book"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Native Pixels","item":"https://rabingaire.com.np/native-pixels/"},{"@type":"ListItem","position":2,"name":"Instance and surface","item":"https://rabingaire.com.np/native-pixels/chapters/04-instance-and-surface.html"}]}]}</script><script>try{const theme=localStorage.getItem("native-pixels-theme");if(theme==="light"||theme==="dark")document.documentElement.dataset.theme=theme;}catch{}</script><link rel="stylesheet" href="../assets/style.css"><script defer src="../assets/book.js"></script></head>
+<body id="top" class="reading-page"><a class="skip-link" href="#main">Skip to content</a><div class="reading-progress" aria-hidden="true"></div><aside class="book-rail"><a class="wordmark" href="../index.html"><span class="brand-mark" aria-hidden="true">▰</span><span>Native Pixels<span class="edition">ODIN / SDL3 / WEBGPU</span></span></a><nav class="rail-primary" aria-label="Book navigation"><a class="rail-link" href="../index.html"><span class="rail-label">Overview</span></a><a class="rail-link" href="../contents.html"><span class="rail-label">All chapters</span></a><a class="rail-link" href="../appendix/build.html"><span class="rail-label">Build the game</span></a></nav><div class="rail-context"><p class="rail-kicker">Chapter 4</p><a class="rail-title" href="#top">Instance and surface</a><nav class="rail-sections" aria-label="Chapter sections"><a class="rail-link numbered" href="#section-1"><span class="rail-index">4.1</span><span class="rail-label">A handle, a descriptor, and an owner</span></a><a class="rail-link numbered" href="#section-2"><span class="rail-index">4.2</span><span class="rail-label">A connection before a device</span></a><a class="rail-link numbered" href="#section-3"><span class="rail-index">4.3</span><span class="rail-label">Give the connection an explicit owner</span></a><a class="rail-link numbered" href="#section-4"><span class="rail-index">4.4</span><span class="rail-label">The bridge is ordinary Odin</span></a><a class="rail-link numbered" href="#section-5"><span class="rail-index">4.5</span><span class="rail-label">Why descriptors have a chain</span></a><a class="rail-link numbered" href="#section-6"><span class="rail-index">4.6</span><span class="rail-label">When this work happens</span></a><a class="rail-link numbered" href="#section-7"><span class="rail-index">4.7</span><span class="rail-label">Read the symptom, test a hypothesis</span></a><a class="rail-link numbered" href="#section-8"><span class="rail-index">4.8</span><span class="rail-label">Experiments</span></a><a class="rail-link numbered" href="#section-9"><span class="rail-index">4.9</span><span class="rail-label">What we have now</span></a><a class="rail-link numbered" href="#section-10"><span class="rail-index">4.10</span><span class="rail-label">Challenges</span></a><a class="rail-link numbered" href="#section-11"><span class="rail-index">4.11</span><span class="rail-label">Exact code changes and runnable checkpoint</span></a></nav><div class="rail-prev-next"><a href="../chapters/03-triangles-become-pixels.html">← Previous</a><a href="../chapters/05-adapter-device-queue.html">Next →</a></div></div><div class="rail-reference"><p class="rail-kicker">Keep nearby</p><nav aria-label="Reference pages"><a class="rail-link" href="../appendix/final-source.html"><span class="rail-label">Complete final source</span></a><a class="rail-link" href="../appendix/glossary.html"><span class="rail-label">Glossary</span></a><a class="rail-link" href="../appendix/cheat-sheets.html"><span class="rail-label">Initialization, frame, and lifetime sheets</span></a><a class="rail-link" href="../appendix/sources.html"><span class="rail-label">Sources and verification record</span></a></nav></div></aside><div class="page-shell"><header class="topbar"><div class="breadcrumb"><a href="../index.html">Native Pixels</a><span aria-hidden="true">/</span><span>Chapter 4</span></div><div class="reader-controls"><button type="button" class="theme-toggle" hidden aria-label="Change color theme">Theme</button><button type="button" class="focus-toggle" hidden aria-pressed="false">Focus</button><a class="mobile-contents" href="../contents.html">Contents</a></div></header><main id="main" tabindex="-1"><article class="chapter"><header class="chapter-header"><span class="chapter-display-number" aria-hidden="true">4</span><p class="eyebrow">II · Put pixels on the window <span>Chapter 04 / 23</span></p><h1>Instance and surface</h1><p class="deck">Join a portable graphics API to an actual desktop window without hiding the platform bridge.</p><p class="reading-meta">7 min read + implementation · checkpoint 04</p></header><aside class="callout outcome"><strong>At the end of this chapter</strong><p>The window opens with a WebGPU instance and a native surface; it is still not rendered into.</p></aside><nav class="on-this-page" aria-label="On this page"><details><summary>In this chapter</summary><ol><li><a href="#section-1"><span>4.1</span> A handle, a descriptor, and an owner</a></li><li><a href="#section-2"><span>4.2</span> A connection before a device</a></li><li><a href="#section-3"><span>4.3</span> Give the connection an explicit owner</a></li><li><a href="#section-4"><span>4.4</span> The bridge is ordinary Odin</a></li><li><a href="#section-5"><span>4.5</span> Why descriptors have a chain</a></li><li><a href="#section-6"><span>4.6</span> When this work happens</a></li><li><a href="#section-7"><span>4.7</span> Read the symptom, test a hypothesis</a></li><li><a href="#section-8"><span>4.8</span> Experiments</a></li><li><a href="#section-9"><span>4.9</span> What we have now</a></li><li><a href="#section-10"><span>4.10</span> Challenges</a></li><li><a href="#section-11"><span>4.11</span> Exact code changes and runnable checkpoint</a></li></ol></details></nav><section class="learning-guide"><h2 id="section-1"><span class="section-number" aria-hidden="true">4.1</span>A handle, a descriptor, and an owner<a class="heading-link" href="#section-1" aria-label="Link to A handle, a descriptor, and an owner">#</a></h2><p>A handle is an opaque reference returned by an API. You keep it to identify an object in later calls; you do not inspect or free the object’s internal memory yourself. A descriptor is ordinary CPU data containing the options for a call. An owner is our application’s chosen place to store a handle and arrange its release. These are three roles, not three interchangeable words for GPU memory.</p><p>In Odin, <code>^GPU</code> is a pointer to a GPU struct, <code>&amp;gpu</code> takes its address, and <code>nil</code> means no pointer or handle. Passing a pointer lets a helper fill the original owner rather than a temporary copy. A native window pointer must be the platform handle the descriptor requests; having the same pointer-sized representation does not make unrelated handles interchangeable.</p><p>The instance is the starting context for WebGPU. The surface connects that context to a presentation destination backed by our already-created window. We create the surface before selecting an adapter so selection can ask for a GPU that can actually present there. Configuration comes later, after we have a device to render the images.</p></section><section><h2 id="section-2"><span class="section-number" aria-hidden="true">4.2</span>A connection before a device<a class="heading-link" href="#section-2" aria-label="Link to A connection before a device">#</a></h2><p>A WebGPU instance is the application’s entry into the native implementation. It can discover adapters and create surfaces. It is not a physical GPU and owns no character vertices. It is mostly a CPU-side API object that holds implementation and backend context. We create one for this application and keep it until every dependent object has been released.</p><p>A surface describes a destination that the operating system can present. It wraps a native window-related object. A surface is not a permanent texture containing the screen, and creating one does not select a resolution or allocate our vertex buffer. Later, configuration will connect this surface to a device and choose the kind of presentable images we can acquire.</p><figure class="diagram object-diagram"><div class="diagram-canvas" tabindex="0" role="region" aria-label="Object dependencies diagram"><svg viewBox="0 0 680 440" role="img" aria-labelledby="object-title object-description"><title id="object-title">From an instance to a configured surface</title><desc id="object-description">The instance creates a surface wrapping the SDL native window and requests a compatible adapter. The adapter creates a device. Configuring the surface requires both the surface and device. The device also supplies a queue and creates drawing resources. Arrows show dependencies, not inheritance or automatic destruction.</desc><defs><marker id="object-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="arrowhead" d="M0 0 10 5 0 10Z"/></marker></defs><g class="connections" marker-end="url(#object-arrow)"><path d="M290 66V92H150V120"/><path d="M390 66V92H520V120"/><path d="M520 180V250"/><path d="M150 180V250"/><path d="M420 280H260"/><path d="M520 310V366"/></g><rect x="235" y="12" width="210" height="54" rx="4"/><text x="340" y="45" text-anchor="middle">Instance</text><rect x="40" y="120" width="220" height="60" rx="4"/><text x="150" y="145" text-anchor="middle">Surface</text><text class="diagram-detail" x="150" y="166" text-anchor="middle">wraps SDL’s native window</text><rect x="420" y="120" width="200" height="60" rx="4"/><text x="520" y="145" text-anchor="middle">Adapter</text><text class="diagram-detail" x="520" y="166" text-anchor="middle">compatible with this surface</text><rect x="420" y="250" width="200" height="60" rx="4"/><text x="520" y="285" text-anchor="middle">Device</text><rect x="40" y="250" width="220" height="60" rx="4"/><text x="150" y="275" text-anchor="middle">Surface configuration</text><text class="diagram-detail" x="150" y="296" text-anchor="middle">device + image settings</text><rect x="370" y="366" width="300" height="60" rx="4"/><text x="520" y="391" text-anchor="middle">Queue and drawing resources</text><text class="diagram-detail" x="520" y="412" text-anchor="middle">buffers, textures, pipelines</text><text class="diagram-detail" x="340" y="265" text-anchor="middle">uses device</text><text class="diagram-detail" x="530" y="219">request</text></svg><svg class="mobile-object-diagram" viewBox="0 0 340 540" role="img" aria-labelledby="mobile-object-title mobile-object-description"><title id="mobile-object-title">Object dependencies in a narrow view</title><desc id="mobile-object-description">Instance branches to surface and compatible adapter. Adapter requests device. Both surface and device connect to surface configuration. Device also supplies the queue and drawing resources.</desc><defs><marker id="mobile-object-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="arrowhead" d="M0 0 10 5 0 10Z"/></marker></defs><g marker-end="url(#mobile-object-arrow)"><path d="M130 65V85H82V110"/><path d="M210 65V85H257V110"/><path d="M82 180V350"/><path d="M257 180V240"/><path d="M180 275H170V385H160"/><path d="M257 310V450"/></g><rect x="95" y="10" width="150" height="55" rx="4"/><text x="170" y="43" text-anchor="middle">Instance</text><rect x="5" y="110" width="155" height="70" rx="4"/><text x="82" y="138" text-anchor="middle">Surface</text><text class="diagram-detail" x="82" y="160" text-anchor="middle">wraps native window</text><rect x="180" y="110" width="155" height="70" rx="4"/><text x="257" y="138" text-anchor="middle">Adapter</text><text class="diagram-detail" x="257" y="160" text-anchor="middle">surface-compatible</text><rect x="180" y="240" width="155" height="70" rx="4"/><text x="257" y="268" text-anchor="middle">Device</text><text class="diagram-detail" x="257" y="290" text-anchor="middle">owns resources</text><rect x="5" y="350" width="155" height="76" rx="4"/><text x="82" y="375" text-anchor="middle">Surface</text><text x="82" y="393" text-anchor="middle">configuration</text><text class="diagram-detail" x="82" y="413" text-anchor="middle">uses this device</text><rect x="180" y="450" width="155" height="76" rx="4"/><text x="257" y="480" text-anchor="middle">Queue, buffers,</text><text x="257" y="502" text-anchor="middle">textures, pipelines</text><text class="diagram-detail" x="265" y="215">request</text></svg></div><figcaption>Read downward from the instance. The two branches meet at surface configuration: a surface alone cannot supply renderable frames. The SDL window is a separate object that must already exist.</figcaption></figure></section><section><h2 id="section-3"><span class="section-number" aria-hidden="true">4.3</span>Give the connection an explicit owner<a class="heading-link" href="#section-3" aria-label="Link to Give the connection an explicit owner">#</a></h2><p>Add <code>src/gpu.odin</code>. Its <code>GPU</code> struct groups the long-lived connection handles. The name is a convenient application owner, not a claim that every field lives in physical GPU memory. Add <code>gpu_init</code> and <code>gpu_destroy</code> as shown. Initialization may stop partway; destruction tolerates that partial state.</p><figure class="code-block"><figcaption>src/gpu.odin · complete file</figcaption><pre><code class="language-odin">package character
+import &quot;core:fmt&quot;
+import sdl &quot;vendor:sdl3&quot;
+import wgpu &quot;vendor:wgpu&quot;
+
+GPU :: struct {
+    instance: wgpu.Instance,
+    platform: Platform_Surface,
+}
+
+gpu_init :: proc(gpu: ^GPU, window: ^sdl.Window) -&gt; bool {
+    gpu.instance = wgpu.CreateInstance(nil)
+    if gpu.instance == nil {
+        fmt.eprintln(&quot;Cannot create a WebGPU instance&quot;)
+        return false
+    }
+    gpu.platform = platform_surface_create(gpu.instance, window)
+    if gpu.platform.surface == nil {
+        fmt.eprintln(&quot;Cannot connect WebGPU to the SDL window&quot;)
+        return false
+    }
+    return true
+}
+
+gpu_destroy :: proc(gpu: ^GPU) {
+    platform_surface_destroy(&amp;gpu.platform)
+    if gpu.instance != nil { wgpu.InstanceRelease(gpu.instance) }
+    gpu^ = {}
+}</code></pre></figure><p><code>CreateInstance(nil)</code> asks for the implementation’s default instance configuration. In this binding the small wrapper checks the linked wgpu-native version before calling the native entry point. We do not request special backend extensions. A descriptor would be useful for nondefault instance requirements, but a pointer to an empty descriptor is not more educational than a deliberate default.</p><p>Inside <code>main()</code>, add a local <code>gpu: GPU</code> after window creation. Register <code>defer gpu_destroy(&gpu)</code> before calling initialization so partial failure is cleaned up. Then return if <code>gpu_init(&gpu, window)</code> fails. The window’s earlier defer will run after the GPU cleanup. The complete changed main appears in this chapter’s snapshot.</p></section><section><h2 id="section-4"><span class="section-number" aria-hidden="true">4.4</span>The bridge is ordinary Odin<a class="heading-link" href="#section-4" aria-label="Link to The bridge is ordinary Odin">#</a></h2><p>Add <code>src/platform.odin</code>. This is the only platform conditional in surface creation. Read your platform’s branch now; the complete cross-platform file is below in the source snapshot. We are not importing <code>vendor:wgpu/sdl3glue</code>: owning this small bridge also makes the extra macOS view’s destruction visible.</p><figure class="code-block"><figcaption>src/platform.odin · Platform_Surface ::</figcaption><pre><code class="language-odin">Platform_Surface :: struct {
+    surface: wgpu.Surface,
+    metal_view: sdl.MetalView, // nil on Windows and Linux
+}</code></pre></figure><figure class="code-block"><figcaption>src/platform.odin · platform_surface_create · macOS branch (closing brace follows in full source)</figcaption><pre><code class="language-odin">when ODIN_OS == .Darwin {
+        result.metal_view = sdl.Metal_CreateView(window)
+        if result.metal_view == nil {
+            fmt.eprintln(&quot;Metal view:&quot;, sdl.GetError())
+            return result
+        }
+        layer := sdl.Metal_GetLayer(result.metal_view)
+        if layer == nil { return result }
+        source := wgpu.SurfaceSourceMetalLayer{
+            chain = {sType = .SurfaceSourceMetalLayer}, layer = layer,
+        }
+        descriptor := wgpu.SurfaceDescriptor{nextInChain = &amp;source.chain, label = &quot;SDL Metal surface&quot;}
+        result.surface = wgpu.InstanceCreateSurface(instance, &amp;descriptor)</code></pre></figure><p>On macOS, SDL creates a Metal-capable view and returns its underlying <code>CAMetalLayer</code>. That layer is the object a Metal-backed WebGPU surface can present into. It is obtained through SDL’s C ABI, so we need no Objective-C or C helper. We retain the <code>MetalView</code> handle and destroy it only after releasing the WebGPU surface. An <code>NSWindow</code> pointer by itself is not the Metal layer.</p><div class="table-scroll"><table><thead><tr><th scope="col">Platform</th><th scope="col">SDL query or object</th><th scope="col">WebGPU chained descriptor</th></tr></thead><tbody><tr><td>macOS</td><td><code>Metal_CreateView</code> → <code>Metal_GetLayer</code></td><td><code>SurfaceSourceMetalLayer</code></td></tr><tr><td>Windows</td><td><code>PROP_WINDOW_WIN32_HWND_POINTER</code> and instance property</td><td><code>SurfaceSourceWindowsHWND</code></td></tr><tr><td>Linux / Wayland</td><td>Display pointer and wl_surface pointer properties</td><td><code>SurfaceSourceWaylandSurface</code></td></tr><tr><td>Linux / X11</td><td>Display pointer and numeric X11 window identifier</td><td><code>SurfaceSourceXlibWindow</code></td></tr></tbody></table></div><p>SDL3 exposes these values through <a href="https://wiki.libsdl.org/SDL3/SDL_GetWindowProperties">window properties</a>. This replaces recipes based on SDL2’s SysWM information structs. On Linux we inspect SDL’s actual video driver before choosing a descriptor: X11 and Wayland handles are not interchangeable. A headless or dummy SDL driver has no supported desktop surface here and is rejected with a diagnostic.</p></section><section><h2 id="section-5"><span class="section-number" aria-hidden="true">4.5</span>Why descriptors have a chain<a class="heading-link" href="#section-5" aria-label="Link to Why descriptors have a chain">#</a></h2><p><code>SurfaceDescriptor</code> carries portable fields such as a label, plus a pointer named <code>nextInChain</code>. Its extension begins with a <code>ChainedStruct</code> containing an <code>sType</code> discriminator. The implementation follows that pointer and interprets the remainder according to the discriminator. The pointer does not point at an arbitrary platform object; it points at a specifically tagged descriptor that contains the platform object.</p><p>The source descriptor and top-level descriptor are local CPU structs. They need to remain valid while <code>InstanceCreateSurface</code> reads them. The resulting surface handle outlives them. The native window and layer, however, must remain usable throughout the surface’s lifetime. Mixing these two lifetimes—short descriptor storage and long native object storage—is a common interop mistake.</p><figure class="code-block"><figcaption>src/platform.odin · platform_surface_destroy ::</figcaption><pre><code class="language-odin">platform_surface_destroy :: proc(platform: ^Platform_Surface) {
+    if platform.surface != nil { wgpu.SurfaceRelease(platform.surface) }
+    when ODIN_OS == .Darwin {
+        if platform.metal_view != nil { sdl.Metal_DestroyView(platform.metal_view) }
+    }
+    platform^ = {}
+}</code></pre></figure><aside class="callout note"><strong>Native versus JavaScript</strong><p>Browser WebGPU receives a canvas context from the browser. It does not expose Win32, X11, Wayland, or Metal-layer descriptor chains. The native surface fills the equivalent presentation role, with explicit host ownership.</p></aside></section><section><h2 id="section-6"><span class="section-number" aria-hidden="true">4.6</span>When this work happens<a class="heading-link" href="#section-6" aria-label="Link to When this work happens">#</a></h2><div class="table-scroll"><table><thead><tr><th scope="col">Operation</th><th scope="col">Frequency</th><th scope="col">Reason</th></tr></thead><tbody><tr><td>Instance creation</td><td>Once</td><td>Enter the native WebGPU implementation</td></tr><tr><td>Native view and surface creation</td><td>Once per window</td><td>Wrap a platform presentation destination</td></tr><tr><td>Descriptor locals</td><td>During each creation call</td><td>Input metadata; not persistent graphics objects</td></tr></tbody></table></div></section><section><h2 id="section-7"><span class="section-number" aria-hidden="true">4.7</span>Read the symptom, test a hypothesis<a class="heading-link" href="#section-7" aria-label="Link to Read the symptom, test a hypothesis">#</a></h2><div class="table-scroll"><table><thead><tr><th scope="col">Symptom</th><th scope="col">What to inspect</th><th scope="col">Why it matters</th></tr></thead><tbody><tr><td>Null surface</td><td>Native handles and the matching sType</td><td>The implementation needs a specific supported presentation object</td></tr><tr><td>Crash on shutdown</td><td>Surface → view → window destruction order</td><td>The surface must not refer to a destroyed native window</td></tr><tr><td>A window exists but stays blank</td><td>Expected at this stage</td><td>The surface is not configured and no commands have been submitted</td></tr></tbody></table></div></section><section><h2 id="section-8"><span class="section-number" aria-hidden="true">4.8</span>Experiments<a class="heading-link" href="#section-8" aria-label="Link to Experiments">#</a></h2><p>These short, optional checks help you test the explanation. Predict the result first, then run the program. Restore the chapter’s baseline before continuing; later chapters assume the supplied checkpoint.</p><ol><li>Print the chosen SDL video driver on Linux and locate its corresponding surface branch.</li><li>Trace which defers run if surface creation fails after the instance succeeds. Confirm that the Metal view, if created, is still released.</li></ol></section><section><h2 id="section-9"><span class="section-number" aria-hidden="true">4.9</span>What we have now<a class="heading-link" href="#section-9" aria-label="Link to What we have now">#</a></h2><p>The window opens with a WebGPU instance and a native surface; it is still not rendered into.</p><p>Before moving on, run this checkpoint and compare it with the stated result. If it differs, use the symptom table above or the complete files below to locate the missing step.</p><p>Run <code>odin run checkpoints/04/src</code> from the book root, with the SDL linker flags for your platform. <a href="../appendix/build.html">Dependency and build instructions →</a></p></section><section class="challenges"><h2 id="section-10"><span class="section-number" aria-hidden="true">4.10</span>Challenges<a class="heading-link" href="#section-10" aria-label="Link to Challenges">#</a></h2><p class="challenge-intro">Optional extensions. The complete game in chapter 23 requires none of these. Work in a separate copy if you want to explore; the next chapter starts from this chapter’s supplied baseline.</p><ol><li><h3>Explain the platform bridge in logs</h3><p>Add one startup diagnostic naming the selected platform branch and whether its required native handles were obtained. Report the stage on failure without dumping raw pointers.</p><p class="challenge-check"><strong>Check your result:</strong> A failed handle lookup identifies the missing platform property and still follows cleanup.</p></li><li><h3>Make ownership visible</h3><p>Add temporary creation and release messages for the instance, surface, and Metal view where applicable. Keep them behind one debug flag.</p><p class="challenge-check"><strong>Check your result:</strong> Normal close and a forced early return show that each successfully created object is released once, in dependency order.</p></li></ol></section><section><h2 id="section-11"><span class="section-number" aria-hidden="true">4.11</span>Exact code changes and runnable checkpoint<a class="heading-link" href="#section-11" aria-label="Link to Exact code changes and runnable checkpoint">#</a></h2><div class="table-scroll"><table><thead><tr><th scope="col">File</th><th scope="col">Operation</th></tr></thead><tbody><tr><td><code>src/main.odin</code></td><td>Replace the changed portions shown below; preserve all other code</td></tr><tr><td><code>src/platform.odin</code></td><td>Add this file</td></tr><tr><td><code>src/gpu.odin</code></td><td>Add this file</td></tr></tbody></table></div><details class="change-record"><summary>Exact patch from the preceding checkpoint</summary><p><a download href="../checkpoints/04/changes.patch">Download changes.patch</a> · inspect or apply with <code>patch -p1</code> from your own project directory at the previous checkpoint.</p><figure class="code-block"><pre><code class="language-diff">--- before/src/main.odin
++++ after/src/main.odin
+@@ -22,6 +22,10 @@
+     }
+     if !sdl.RaiseWindow(window) { fmt.eprintln(&quot;Window focus request:&quot;, sdl.GetError()) }
+ 
++    gpu: GPU
++    defer gpu_destroy(&amp;gpu)
++    if !gpu_init(&amp;gpu, window) { return }
++
+     running := true
+     for running {
+         event: sdl.Event
+--- before/src/platform.odin
++++ after/src/platform.odin
+@@ -0,0 +1,73 @@
++package character
++import &quot;core:fmt&quot;
++import sdl &quot;vendor:sdl3&quot;
++import wgpu &quot;vendor:wgpu&quot;
++
++// SDL owns the window. We own this extra Metal view, when one exists.
++Platform_Surface :: struct {
++    surface: wgpu.Surface,
++    metal_view: sdl.MetalView, // nil on Windows and Linux
++}
++
++platform_surface_create :: proc(instance: wgpu.Instance, window: ^sdl.Window) -&gt; Platform_Surface {
++    result: Platform_Surface
++    when ODIN_OS == .Darwin {
++        result.metal_view = sdl.Metal_CreateView(window)
++        if result.metal_view == nil {
++            fmt.eprintln(&quot;Metal view:&quot;, sdl.GetError())
++            return result
++        }
++        layer := sdl.Metal_GetLayer(result.metal_view)
++        if layer == nil { return result }
++        source := wgpu.SurfaceSourceMetalLayer{
++            chain = {sType = .SurfaceSourceMetalLayer}, layer = layer,
++        }
++        descriptor := wgpu.SurfaceDescriptor{nextInChain = &amp;source.chain, label = &quot;SDL Metal surface&quot;}
++        result.surface = wgpu.InstanceCreateSurface(instance, &amp;descriptor)
++    } else when ODIN_OS == .Windows {
++        properties := sdl.GetWindowProperties(window)
++        hwnd := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_WIN32_HWND_POINTER, nil)
++        instance_handle := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_WIN32_INSTANCE_POINTER, nil)
++        if hwnd == nil || instance_handle == nil { return result }
++        source := wgpu.SurfaceSourceWindowsHWND{
++            chain = {sType = .SurfaceSourceWindowsHWND}, hwnd = hwnd, hinstance = instance_handle,
++        }
++        descriptor := wgpu.SurfaceDescriptor{nextInChain = &amp;source.chain, label = &quot;SDL Win32 surface&quot;}
++        result.surface = wgpu.InstanceCreateSurface(instance, &amp;descriptor)
++    } else when ODIN_OS == .Linux {
++        properties := sdl.GetWindowProperties(window)
++        switch sdl.GetCurrentVideoDriver() {
++        case &quot;wayland&quot;:
++            display := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_WAYLAND_DISPLAY_POINTER, nil)
++            surface := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_WAYLAND_SURFACE_POINTER, nil)
++            if display == nil || surface == nil { return result }
++            source := wgpu.SurfaceSourceWaylandSurface{
++                chain = {sType = .SurfaceSourceWaylandSurface}, display = display, surface = surface,
++            }
++            descriptor := wgpu.SurfaceDescriptor{nextInChain = &amp;source.chain, label = &quot;SDL Wayland surface&quot;}
++            result.surface = wgpu.InstanceCreateSurface(instance, &amp;descriptor)
++        case &quot;x11&quot;:
++            display := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_X11_DISPLAY_POINTER, nil)
++            window_id := sdl.GetNumberProperty(properties, sdl.PROP_WINDOW_X11_WINDOW_NUMBER, 0)
++            if display == nil || window_id == 0 { return result }
++            source := wgpu.SurfaceSourceXlibWindow{
++                chain = {sType = .SurfaceSourceXlibWindow}, display = display, window = u64(window_id),
++            }
++            descriptor := wgpu.SurfaceDescriptor{nextInChain = &amp;source.chain, label = &quot;SDL X11 surface&quot;}
++            result.surface = wgpu.InstanceCreateSurface(instance, &amp;descriptor)
++        case:
++            fmt.eprintln(&quot;Unsupported SDL video driver:&quot;, sdl.GetCurrentVideoDriver())
++        }
++    } else {
++        #panic(&quot;This book targets macOS, Windows, and Linux desktop windows&quot;)
++    }
++    return result
++}
++
++platform_surface_destroy :: proc(platform: ^Platform_Surface) {
++    if platform.surface != nil { wgpu.SurfaceRelease(platform.surface) }
++    when ODIN_OS == .Darwin {
++        if platform.metal_view != nil { sdl.Metal_DestroyView(platform.metal_view) }
++    }
++    platform^ = {}
++}
+--- before/src/gpu.odin
++++ after/src/gpu.odin
+@@ -0,0 +1,29 @@
++package character
++import &quot;core:fmt&quot;
++import sdl &quot;vendor:sdl3&quot;
++import wgpu &quot;vendor:wgpu&quot;
++
++GPU :: struct {
++    instance: wgpu.Instance,
++    platform: Platform_Surface,
++}
++
++gpu_init :: proc(gpu: ^GPU, window: ^sdl.Window) -&gt; bool {
++    gpu.instance = wgpu.CreateInstance(nil)
++    if gpu.instance == nil {
++        fmt.eprintln(&quot;Cannot create a WebGPU instance&quot;)
++        return false
++    }
++    gpu.platform = platform_surface_create(gpu.instance, window)
++    if gpu.platform.surface == nil {
++        fmt.eprintln(&quot;Cannot connect WebGPU to the SDL window&quot;)
++        return false
++    }
++    return true
++}
++
++gpu_destroy :: proc(gpu: ^GPU) {
++    platform_surface_destroy(&amp;gpu.platform)
++    if gpu.instance != nil { wgpu.InstanceRelease(gpu.instance) }
++    gpu^ = {}
++}</code></pre></figure></details><p>Complete end-of-chapter files follow. These are already present in <code>checkpoints/04/</code>; no assembly from excerpts is required.</p><details class="source-file"><summary>src/main.odin <span>40 lines</span></summary><p><a download href="../checkpoints/04/src/main.odin">Download this checkpoint’s src/main.odin</a></p><figure class="code-block"><figcaption>checkpoints/04/src/main.odin · complete file</figcaption><pre><code class="language-odin" data-source="checkpoints/04/src/main.odin">package character
+import &quot;core:fmt&quot;
+import sdl &quot;vendor:sdl3&quot;
+
+main :: proc() {
+    if !sdl.Init({.VIDEO}) {
+        fmt.eprintln(&quot;SDL initialization:&quot;, sdl.GetError())
+        return
+    }
+    defer sdl.Quit()
+    flags: sdl.WindowFlags = {}
+    when ODIN_OS == .Darwin { flags += {.METAL} }
+    window := sdl.CreateWindow(&quot;Native Pixels&quot;, 960, 640, flags)
+    if window == nil {
+        fmt.eprintln(&quot;Window creation:&quot;, sdl.GetError())
+        return
+    }
+    defer sdl.DestroyWindow(window)
+    if !sdl.ShowWindow(window) {
+        fmt.eprintln(&quot;Show window:&quot;, sdl.GetError())
+        return
+    }
+    if !sdl.RaiseWindow(window) { fmt.eprintln(&quot;Window focus request:&quot;, sdl.GetError()) }
+
+    gpu: GPU
+    defer gpu_destroy(&amp;gpu)
+    if !gpu_init(&amp;gpu, window) { return }
+
+    running := true
+    for running {
+        event: sdl.Event
+        for sdl.PollEvent(&amp;event) {
+            #partial switch event.type {
+            case .QUIT, .WINDOW_CLOSE_REQUESTED: running = false
+            }
+        }
+        if !running { break }
+        sdl.Delay(10)
+    }
+}
+</code></pre></figure></details><details class="source-file"><summary>src/platform.odin <span>73 lines</span></summary><p><a download href="../checkpoints/04/src/platform.odin">Download this checkpoint’s src/platform.odin</a></p><figure class="code-block"><figcaption>checkpoints/04/src/platform.odin · complete file</figcaption><pre><code class="language-odin" data-source="checkpoints/04/src/platform.odin">package character
+import &quot;core:fmt&quot;
+import sdl &quot;vendor:sdl3&quot;
+import wgpu &quot;vendor:wgpu&quot;
+
+// SDL owns the window. We own this extra Metal view, when one exists.
+Platform_Surface :: struct {
+    surface: wgpu.Surface,
+    metal_view: sdl.MetalView, // nil on Windows and Linux
+}
+
+platform_surface_create :: proc(instance: wgpu.Instance, window: ^sdl.Window) -&gt; Platform_Surface {
+    result: Platform_Surface
+    when ODIN_OS == .Darwin {
+        result.metal_view = sdl.Metal_CreateView(window)
+        if result.metal_view == nil {
+            fmt.eprintln(&quot;Metal view:&quot;, sdl.GetError())
+            return result
+        }
+        layer := sdl.Metal_GetLayer(result.metal_view)
+        if layer == nil { return result }
+        source := wgpu.SurfaceSourceMetalLayer{
+            chain = {sType = .SurfaceSourceMetalLayer}, layer = layer,
+        }
+        descriptor := wgpu.SurfaceDescriptor{nextInChain = &amp;source.chain, label = &quot;SDL Metal surface&quot;}
+        result.surface = wgpu.InstanceCreateSurface(instance, &amp;descriptor)
+    } else when ODIN_OS == .Windows {
+        properties := sdl.GetWindowProperties(window)
+        hwnd := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_WIN32_HWND_POINTER, nil)
+        instance_handle := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_WIN32_INSTANCE_POINTER, nil)
+        if hwnd == nil || instance_handle == nil { return result }
+        source := wgpu.SurfaceSourceWindowsHWND{
+            chain = {sType = .SurfaceSourceWindowsHWND}, hwnd = hwnd, hinstance = instance_handle,
+        }
+        descriptor := wgpu.SurfaceDescriptor{nextInChain = &amp;source.chain, label = &quot;SDL Win32 surface&quot;}
+        result.surface = wgpu.InstanceCreateSurface(instance, &amp;descriptor)
+    } else when ODIN_OS == .Linux {
+        properties := sdl.GetWindowProperties(window)
+        switch sdl.GetCurrentVideoDriver() {
+        case &quot;wayland&quot;:
+            display := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_WAYLAND_DISPLAY_POINTER, nil)
+            surface := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_WAYLAND_SURFACE_POINTER, nil)
+            if display == nil || surface == nil { return result }
+            source := wgpu.SurfaceSourceWaylandSurface{
+                chain = {sType = .SurfaceSourceWaylandSurface}, display = display, surface = surface,
+            }
+            descriptor := wgpu.SurfaceDescriptor{nextInChain = &amp;source.chain, label = &quot;SDL Wayland surface&quot;}
+            result.surface = wgpu.InstanceCreateSurface(instance, &amp;descriptor)
+        case &quot;x11&quot;:
+            display := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_X11_DISPLAY_POINTER, nil)
+            window_id := sdl.GetNumberProperty(properties, sdl.PROP_WINDOW_X11_WINDOW_NUMBER, 0)
+            if display == nil || window_id == 0 { return result }
+            source := wgpu.SurfaceSourceXlibWindow{
+                chain = {sType = .SurfaceSourceXlibWindow}, display = display, window = u64(window_id),
+            }
+            descriptor := wgpu.SurfaceDescriptor{nextInChain = &amp;source.chain, label = &quot;SDL X11 surface&quot;}
+            result.surface = wgpu.InstanceCreateSurface(instance, &amp;descriptor)
+        case:
+            fmt.eprintln(&quot;Unsupported SDL video driver:&quot;, sdl.GetCurrentVideoDriver())
+        }
+    } else {
+        #panic(&quot;This book targets macOS, Windows, and Linux desktop windows&quot;)
+    }
+    return result
+}
+
+platform_surface_destroy :: proc(platform: ^Platform_Surface) {
+    if platform.surface != nil { wgpu.SurfaceRelease(platform.surface) }
+    when ODIN_OS == .Darwin {
+        if platform.metal_view != nil { sdl.Metal_DestroyView(platform.metal_view) }
+    }
+    platform^ = {}
+}
+</code></pre></figure></details><details class="source-file"><summary>src/gpu.odin <span>29 lines</span></summary><p><a download href="../checkpoints/04/src/gpu.odin">Download this checkpoint’s src/gpu.odin</a></p><figure class="code-block"><figcaption>checkpoints/04/src/gpu.odin · complete file</figcaption><pre><code class="language-odin" data-source="checkpoints/04/src/gpu.odin">package character
+import &quot;core:fmt&quot;
+import sdl &quot;vendor:sdl3&quot;
+import wgpu &quot;vendor:wgpu&quot;
+
+GPU :: struct {
+    instance: wgpu.Instance,
+    platform: Platform_Surface,
+}
+
+gpu_init :: proc(gpu: ^GPU, window: ^sdl.Window) -&gt; bool {
+    gpu.instance = wgpu.CreateInstance(nil)
+    if gpu.instance == nil {
+        fmt.eprintln(&quot;Cannot create a WebGPU instance&quot;)
+        return false
+    }
+    gpu.platform = platform_surface_create(gpu.instance, window)
+    if gpu.platform.surface == nil {
+        fmt.eprintln(&quot;Cannot connect WebGPU to the SDL window&quot;)
+        return false
+    }
+    return true
+}
+
+gpu_destroy :: proc(gpu: ^GPU) {
+    platform_surface_destroy(&amp;gpu.platform)
+    if gpu.instance != nil { wgpu.InstanceRelease(gpu.instance) }
+    gpu^ = {}
+}
+</code></pre></figure></details></section><nav class="chapter-navigation" aria-label="Chapter navigation"><a href="../chapters/03-triangles-become-pixels.html"><span>← Previous Chapter</span><small>How triangles become pixels</small></a><a href="../contents.html">Contents</a><a href="../chapters/05-adapter-device-queue.html"><span>Next Chapter →</span><small>Adapter, device, and queue</small></a></nav></article></main><footer class="page-footer"><span>Native Pixels · September 2026 edition</span><a href="../appendix/sources.html">Sources &amp; verification</a><a href="../LICENSE">MIT License</a><a href="#top">Back to top ↑</a></footer></div></body></html>

@@ -1,0 +1,205 @@
+{
+  "edition": "2026-09-13",
+  "nativeSmoke": {
+    "status": "passed",
+    "platform": "macOS arm64",
+    "successfulPresents": 100,
+    "resizeRequests": [
+      [
+        720,
+        480
+      ],
+      [
+        1100,
+        700
+      ]
+    ],
+    "surfaceFormat": "BGRA8UnormSrgb",
+    "finalPosition": [
+      520,
+      100
+    ],
+    "reportedWebGPUErrors": 0,
+    "output": "Surface format: BGRA8UnormSrgb\nSMOKE PASS: 100 successful presents, two resizes, position: [520, 100]",
+    "scope": "Counts actual successful SurfacePresent calls. Real WGSL/pipeline validation, 100 presents, 100 deterministic movement updates, two resize requests and shutdown. Not a physical keyboard or pixel-image assertion."
+  },
+  "notVerified": [
+    "Windows and Linux runtime",
+    "Intel macOS runtime",
+    "Physical keyboard input",
+    "Forced device/surface loss",
+    "Multiple displays with different DPI"
+  ],
+  "static": {
+    "status": "passed",
+    "pages": 30,
+    "localLinksAndAssets": 1835,
+    "exactSourceBlocks": 124,
+    "checkpoints": 23,
+    "canonicalFiles": 9,
+    "htmlNesting": "passed",
+    "beginnerWalkthroughs": 23,
+    "optionalChallenges": 47,
+    "localFontAssets": "passed",
+    "chapterProseWords": 33757
+  },
+  "nativeBuild": {
+    "status": "passed",
+    "platform": "darwin",
+    "architecture": "arm64",
+    "odin": "/opt/homebrew/bin/odin version dev-2026-09:a2fb372b7",
+    "checkpoints": [
+      "01",
+      "02",
+      "03",
+      "04",
+      "05",
+      "06",
+      "07",
+      "08",
+      "09",
+      "10",
+      "11",
+      "12",
+      "13",
+      "14",
+      "15",
+      "16",
+      "17",
+      "18",
+      "19",
+      "20",
+      "21",
+      "22",
+      "23"
+    ],
+    "movementTests": 3,
+    "roomTests": 11
+  },
+  "updated": "2026-09-14T11:45:44.208Z",
+  "browser": {
+    "status": "passed",
+    "pages": 30,
+    "viewports": [
+      360,
+      390,
+      768,
+      1024,
+      1280,
+      1440,
+      1680
+    ],
+    "themes": [
+      "light",
+      "dark"
+    ],
+    "pageViewportChecks": 420,
+    "offlineFileURLs": true,
+    "noJavaScriptReading": true,
+    "theme": true,
+    "chapterSearch": true,
+    "coordinateInteraction": true,
+    "staticSectionNavigation": true,
+    "consistentPageGeometry": true,
+    "sidebarHoverGeometry": true,
+    "resumeReading": true,
+    "expandedMobileSource": true,
+    "svgLabelsWithinViewBox": true,
+    "imagesLoaded": true,
+    "optionalChallenges": true,
+    "screenshots": [
+      "home-desktop.png",
+      "home-mobile.png",
+      "chapter-dark.png",
+      "chapter-04-desktop.png",
+      "chapter-04-diagram.png",
+      "chapter-04-diagram-mobile.png",
+      "chapter-challenges-mobile.png",
+      "chapter-challenges-desktop.png",
+      "home-hover.png",
+      "contents-hover.png",
+      "chapter-hover.png",
+      "reference-hover.png",
+      "home-dark.png"
+    ]
+  },
+  "nativeStages": {
+    "status": "passed",
+    "platform": "darwin",
+    "architecture": "arm64",
+    "stages": [
+      {
+        "chapter": 7,
+        "output": "Surface format: BGRA8UnormSrgb\nWindow flags: WindowFlags{METAL}\nFirst acquisition: Occluded\nSTAGE 7 PASS: presented 12",
+        "stderr": ""
+      },
+      {
+        "chapter": 8,
+        "output": "Surface format: BGRA8UnormSrgb\nWindow flags: WindowFlags{METAL}\nFirst acquisition: Occluded\nSTAGE 8 PASS: presented 12",
+        "stderr": ""
+      },
+      {
+        "chapter": 9,
+        "output": "Surface format: BGRA8UnormSrgb\nWindow flags: WindowFlags{METAL}\nFirst acquisition: Occluded\nSTAGE 9 PASS: presented 12",
+        "stderr": ""
+      },
+      {
+        "chapter": 10,
+        "output": "Surface format: BGRA8UnormSrgb\nWindow flags: WindowFlags{METAL}\nFirst acquisition: Occluded\nSTAGE 10 PASS: presented 12",
+        "stderr": ""
+      },
+      {
+        "chapter": 11,
+        "output": "Surface format: BGRA8UnormSrgb\nWindow flags: WindowFlags{METAL}\nFirst acquisition: Occluded\nSTAGE 11 PASS: presented 12",
+        "stderr": ""
+      },
+      {
+        "chapter": 12,
+        "output": "Surface format: BGRA8UnormSrgb\nWindow flags: WindowFlags{METAL}\nFirst acquisition: Occluded\nSTAGE 12 PASS: presented 12",
+        "stderr": ""
+      },
+      {
+        "chapter": 13,
+        "output": "Surface format: BGRA8UnormSrgb\nWindow flags: WindowFlags{RESIZABLE, HIGH_PIXEL_DENSITY, METAL}\nFirst acquisition: Occluded\nSTAGE 13 PASS: presented 12",
+        "stderr": ""
+      },
+      {
+        "chapter": 14,
+        "output": "Surface format: BGRA8UnormSrgb\nWindow flags: WindowFlags{RESIZABLE, HIGH_PIXEL_DENSITY, METAL}\nFirst acquisition: Occluded\nSTAGE 14 PASS: presented 12",
+        "stderr": ""
+      },
+      {
+        "chapter": 15,
+        "output": "Surface format: BGRA8UnormSrgb\nWindow flags: WindowFlags{RESIZABLE, HIGH_PIXEL_DENSITY, METAL}\nFirst acquisition: Occluded\nSTAGE 15 PASS: presented 12",
+        "stderr": ""
+      },
+      {
+        "chapter": 16,
+        "output": "Surface format: BGRA8UnormSrgb\nWindow flags: WindowFlags{RESIZABLE, HIGH_PIXEL_DENSITY, METAL}\nFirst acquisition: Occluded\nSTAGE 16 PASS: presented 12",
+        "stderr": ""
+      }
+    ],
+    "scope": "Actual GPU shader/pipeline validation and 12 successful surface presents for every distinct rendering checkpoint 7 through 16; up to 300 attempts per checkpoint."
+  },
+  "roomSmoke": {
+    "status": "passed",
+    "successfulPresents": 450,
+    "resizes": 2,
+    "scriptedMovement": true,
+    "syntheticF1Event": true,
+    "chairContactY": 175,
+    "finalPosition": [
+      192,
+      51
+    ],
+    "allFourWalkColumnsPresented": true,
+    "blockedNorthIdle": true,
+    "framebufferCaptures": [
+      "assets/room-gameplay.png",
+      "assets/room-collision.png"
+    ],
+    "captureRequiresCopySrc": true,
+    "platform": "darwin",
+    "architecture": "arm64"
+  }
+}

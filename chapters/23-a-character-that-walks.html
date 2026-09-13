@@ -1,0 +1,922 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="description" content="A sprite sheet adds poses, not a new rendering system. Keep direction and time in the game, and select an image region through the renderer API."><meta name="author" content="Rabin Gaire"><title>A character that walks — Native Pixels</title><link rel="canonical" href="https://rabingaire.com.np/native-pixels/chapters/23-a-character-that-walks.html"><link rel="sitemap" type="application/xml" href="../sitemap.xml"><meta property="og:type" content="article"><meta property="og:site_name" content="Native Pixels"><meta property="og:locale" content="en_US"><meta property="og:title" content="A character that walks — Native Pixels"><meta property="og:description" content="A sprite sheet adds poses, not a new rendering system. Keep direction and time in the game, and select an image region through the renderer API."><meta property="og:url" content="https://rabingaire.com.np/native-pixels/chapters/23-a-character-that-walks.html"><meta property="og:image" content="https://rabingaire.com.np/native-pixels/assets/room-gameplay.png"><meta property="og:image:alt" content="Pixel-art room rendered with native WebGPU, Odin, and SDL3"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="A character that walks — Native Pixels"><meta name="twitter:description" content="A sprite sheet adds poses, not a new rendering system. Keep direction and time in the game, and select an image region through the renderer API."><meta name="twitter:image" content="https://rabingaire.com.np/native-pixels/assets/room-gameplay.png"><script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Book","@id":"https://rabingaire.com.np/native-pixels/#book","name":"Native Pixels","url":"https://rabingaire.com.np/native-pixels/","description":"Learn native 2D WebGPU with Odin and SDL3 in 23 chapters. Build a pixel-art game with sprite animation, collision, and complete runnable source.","inLanguage":"en","isAccessibleForFree":true,"author":{"@type":"Person","name":"Rabin Gaire"},"license":"https://rabingaire.com.np/native-pixels/LICENSE","image":"https://rabingaire.com.np/native-pixels/assets/room-gameplay.png"},{"@type":"Chapter","@id":"https://rabingaire.com.np/native-pixels/chapters/23-a-character-that-walks.html","url":"https://rabingaire.com.np/native-pixels/chapters/23-a-character-that-walks.html","name":"A character that walks","description":"A sprite sheet adds poses, not a new rendering system. Keep direction and time in the game, and select an image region through the renderer API.","inLanguage":"en","isPartOf":{"@id":"https://rabingaire.com.np/native-pixels/#book"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Native Pixels","item":"https://rabingaire.com.np/native-pixels/"},{"@type":"ListItem","position":2,"name":"A character that walks","item":"https://rabingaire.com.np/native-pixels/chapters/23-a-character-that-walks.html"}]}]}</script><script>try{const theme=localStorage.getItem("native-pixels-theme");if(theme==="light"||theme==="dark")document.documentElement.dataset.theme=theme;}catch{}</script><link rel="stylesheet" href="../assets/style.css"><script defer src="../assets/book.js"></script></head>
+<body id="top" class="reading-page"><a class="skip-link" href="#main">Skip to content</a><div class="reading-progress" aria-hidden="true"></div><aside class="book-rail"><a class="wordmark" href="../index.html"><span class="brand-mark" aria-hidden="true">▰</span><span>Native Pixels<span class="edition">ODIN / SDL3 / WEBGPU</span></span></a><nav class="rail-primary" aria-label="Book navigation"><a class="rail-link" href="../index.html"><span class="rail-label">Overview</span></a><a class="rail-link" href="../contents.html"><span class="rail-label">All chapters</span></a><a class="rail-link" href="../appendix/build.html"><span class="rail-label">Build the game</span></a></nav><div class="rail-context"><p class="rail-kicker">Chapter 23</p><a class="rail-title" href="#top">A character that walks</a><nav class="rail-sections" aria-label="Chapter sections"><a class="rail-link numbered" href="#section-1"><span class="rail-index">23.1</span><span class="rail-label">Separate where the player stands from which pose we show</span></a><a class="rail-link numbered" href="#section-2"><span class="rail-index">23.2</span><span class="rail-label">Animation is a choice of picture</span></a><a class="rail-link numbered" href="#section-3"><span class="rail-index">23.3</span><span class="rail-label">Add the smallest missing renderer capability</span></a><a class="rail-link numbered" href="#section-4"><span class="rail-index">23.4</span><span class="rail-label">Describe the actual asset</span></a><a class="rail-link numbered" href="#section-5"><span class="rail-index">23.5</span><span class="rail-label">Choose a scale that belongs in the room</span></a><a class="rail-link numbered" href="#section-6"><span class="rail-index">23.6</span><span class="rail-label">The game owns direction and time</span></a><a class="rail-link numbered" href="#section-7"><span class="rail-index">23.7</span><span class="rail-label">Update after collision; draw after update</span></a><a class="rail-link numbered" href="#section-8"><span class="rail-index">23.8</span><span class="rail-label">A final animated frame, from input to pixels</span></a><a class="rail-link numbered" href="#section-9"><span class="rail-index">23.9</span><span class="rail-label">Test the clock and the boundary</span></a><a class="rail-link numbered" href="#section-10"><span class="rail-index">23.10</span><span class="rail-label">When this work happens</span></a><a class="rail-link numbered" href="#section-11"><span class="rail-index">23.11</span><span class="rail-label">Read the symptom, test a hypothesis</span></a><a class="rail-link numbered" href="#section-12"><span class="rail-index">23.12</span><span class="rail-label">Experiments</span></a><a class="rail-link numbered" href="#section-13"><span class="rail-index">23.13</span><span class="rail-label">What we have now</span></a><a class="rail-link numbered" href="#section-14"><span class="rail-index">23.14</span><span class="rail-label">Challenges</span></a><a class="rail-link numbered" href="#section-15"><span class="rail-index">23.15</span><span class="rail-label">Exact code changes and runnable checkpoint</span></a></nav><div class="rail-prev-next"><a href="../chapters/22-finish-with-evidence.html">← Previous</a><a href="../appendix/final-source.html">Final source →</a></div></div><div class="rail-reference"><p class="rail-kicker">Keep nearby</p><nav aria-label="Reference pages"><a class="rail-link" href="../appendix/final-source.html"><span class="rail-label">Complete final source</span></a><a class="rail-link" href="../appendix/glossary.html"><span class="rail-label">Glossary</span></a><a class="rail-link" href="../appendix/cheat-sheets.html"><span class="rail-label">Initialization, frame, and lifetime sheets</span></a><a class="rail-link" href="../appendix/sources.html"><span class="rail-label">Sources and verification record</span></a></nav></div></aside><div class="page-shell"><header class="topbar"><div class="breadcrumb"><a href="../index.html">Native Pixels</a><span aria-hidden="true">/</span><span>Chapter 23</span></div><div class="reader-controls"><button type="button" class="theme-toggle" hidden aria-label="Change color theme">Theme</button><button type="button" class="focus-toggle" hidden aria-pressed="false">Focus</button><a class="mobile-contents" href="../contents.html">Contents</a></div></header><main id="main" tabindex="-1"><article class="chapter"><header class="chapter-header"><span class="chapter-display-number" aria-hidden="true">23</span><p class="eyebrow">V · A room worth walking through <span>Chapter 23 / 23</span></p><h1>A character that walks</h1><p class="deck">A sprite sheet adds poses, not a new rendering system. Keep direction and time in the game, and select an image region through the renderer API.</p><p class="reading-meta">13 min read + implementation · checkpoint 23</p></header><aside class="callout outcome"><strong>At the end of this chapter</strong><p>The player faces four directions, cycles through walking poses while actually moving, and returns to a directional idle pose when released or blocked.</p></aside><nav class="on-this-page" aria-label="On this page"><details><summary>In this chapter</summary><ol><li><a href="#section-1"><span>23.1</span> Separate where the player stands from which pose we show</a></li><li><a href="#section-2"><span>23.2</span> Animation is a choice of picture</a></li><li><a href="#section-3"><span>23.3</span> Add the smallest missing renderer capability</a></li><li><a href="#section-4"><span>23.4</span> Describe the actual asset</a></li><li><a href="#section-5"><span>23.5</span> Choose a scale that belongs in the room</a></li><li><a href="#section-6"><span>23.6</span> The game owns direction and time</a></li><li><a href="#section-7"><span>23.7</span> Update after collision; draw after update</a></li><li><a href="#section-8"><span>23.8</span> A final animated frame, from input to pixels</a></li><li><a href="#section-9"><span>23.9</span> Test the clock and the boundary</a></li><li><a href="#section-10"><span>23.10</span> When this work happens</a></li><li><a href="#section-11"><span>23.11</span> Read the symptom, test a hypothesis</a></li><li><a href="#section-12"><span>23.12</span> Experiments</a></li><li><a href="#section-13"><span>23.13</span> What we have now</a></li><li><a href="#section-14"><span>23.14</span> Challenges</a></li><li><a href="#section-15"><span>23.15</span> Exact code changes and runnable checkpoint</a></li></ol></details></nav><section class="learning-guide"><h2 id="section-1"><span class="section-number" aria-hidden="true">23.1</span>Separate where the player stands from which pose we show<a class="heading-link" href="#section-1" aria-label="Link to Separate where the player stands from which pose we show">#</a></h2><p>A sprite sheet stores several pictures in one texture. A source rectangle chooses a pose; its UV bounds select the corresponding part of that texture. Geometry determines the pose’s size and position in the world. The feet anchor keeps that geometry attached to the same game position even when cropped poses have slightly different widths.</p><p>Our first south pose has a crop size of 134 × 268 texels. At PLAYER_TEXEL_SCALE = 0.16, it occupies 21.44 × 42.88 world units. Its anchor is half the width and one unit above the bottom. Increasing visual size changes that geometry, while the world, movement speed, and small floor-contact box retain their existing units.</p><p>Requested direction chooses facing, but resolved movement chooses whether to walk. Against a north wall, pressing north still faces north; collision produces zero displacement, so the clock resets to an idle pose. With 0.1 seconds per pose and four columns, a walk cycle lasts 0.4 seconds regardless of how often Draw reads the current frame.</p></section><section><h2 id="section-2"><span class="section-number" aria-hidden="true">23.2</span>Animation is a choice of picture<a class="heading-link" href="#section-2" aria-label="Link to Animation is a choice of picture">#</a></h2><p>The previous character moved as a still image. We will give that movement a short four-pose cycle and remember which way the player faces. Animation does not require skeletal rigs, a scene graph, another pipeline, or uploading image pixels every frame. We place sixteen poses in one persistent texture and change the UV rectangle of the player’s quad.</p><figure class="art-preview sprite-sheet-preview"><img width="1254" height="1254" src="../project/assets/player-walk.png" alt="Transparent sprite sheet: four rows facing south, west, east, and north, each with idle and walking poses"><figcaption>Four directions, four poses per direction. Background transparency is stored in the PNG’s alpha channel.</figcaption></figure><p>The generated sheet preserves the brown hair, sage jacket, tan trousers, and boots. Its first version accidentally painted a checkerboard background. We rejected that RGB-only output and used a targeted image edit to remove the background, then checked that the replacement was RGBA with transparent empty pixels. This is an asset-validation lesson: a picture that looks transparent in a preview is not proof of alpha. The <a href="../project/assets/ANIMATION-PROMPT.txt">generation prompt</a> and <a href="../project/assets/ANIMATION-ALPHA-PROMPT.txt">transparency correction prompt</a> are saved with the assets.</p><p>The actual sheet is 1254 × 1254, not the requested 1024 × 1024. It has clear separate cells, but the figures are not perfectly registered on a uniform grid. We use reviewed source rectangles and a bottom-center anchor instead of pretending that blindly dividing by four produces a polished animation. The result is a small, stylized walk cycle, not a production animator’s perfectly matched directional gait. Some side-view stepping silhouettes are similar. You can replace the art while retaining the tested animation and rendering contracts.</p></section><section><h2 id="section-3"><span class="section-number" aria-hidden="true">23.3</span>Add the smallest missing renderer capability<a class="heading-link" href="#section-3" aria-label="Link to Add the smallest missing renderer capability">#</a></h2><p>In <code>renderer/renderer.odin</code>, extend Sprite with two optional parameters after tint: <code>uv_min</code> defaults to (0,0), and <code>uv_max</code> defaults to (1,1). Existing room and debug rectangle calls still select the whole image. Replace only the recorded UV calculation, not vertex stride, shaders, bind group layouts, or frame encoding.</p><figure class="code-block"><figcaption>renderer/renderer.odin · Sprite :: proc</figcaption><pre><code class="language-odin">Sprite :: proc(r: ^State, texture: Texture_ID, position, size: [2]f32,
+               tint: [4]f32 = {1, 1, 1, 1}</code></pre></figure><p>The four local corners remain (0,0), (1,0), (1,1), (0,1). For each corner, compute <code>uv_min + corner × (uv_max − uv_min)</code>. That maps the same unit quad onto a selected image rectangle. A frame’s position/size still controls geometry; its UV bounds independently control which texels color that geometry. Sprite now checks that the region is positive and within normalized [0,1] bounds. This API serves a real caller need; the renderer still does not know about directions or frame timers.</p><div class="table-scroll"><table><thead><tr><th scope="col">Data</th><th scope="col">Odin vertex bytes</th><th scope="col">WGSL meaning</th></tr></thead><tbody><tr><td>World corner</td><td>position at offset 0, Float32x2/location 0</td><td>Where this corner lands after projection.</td></tr><tr><td>Selected frame UV corner</td><td>uv at offset 8, Float32x2/location 1</td><td>Where this corner samples the sheet.</td></tr><tr><td>Tint</td><td>tint at offset 16, Float32x4/location 2</td><td>Color/opacity multiplier.</td></tr><tr><td>Stride</td><td>Still 32 bytes</td><td>Animation changes values, not the pipeline’s memory contract.</td></tr></tbody></table></div></section><section><h2 id="section-4"><span class="section-number" aria-hidden="true">23.4</span>Describe the actual asset<a class="heading-link" href="#section-4" aria-label="Link to Describe the actual asset">#</a></h2><p>Add <code>game/animation.odin</code>. Rows are South, West, East, North in that order. Columns form the idle/passing/step sequence supplied by the artist or generator. Column zero is also the directional idle pose. These are content conventions, not WebGPU enum values.</p><figure class="code-block"><figcaption>game/animation.odin · Facing :: enum</figcaption><pre><code class="language-odin">Facing :: enum { South, West, East, North }
+Animation :: struct { facing: Facing, phase: f32, moving: bool }
+FRAME_SECONDS :: f32(0.1)
+// Visual world units per source texel; independent of the collision footprint.
+PLAYER_TEXEL_SCALE :: f32(0.16)
+SHEET_SIZE :: [2]f32{1254, 1254}
+Sprite_Frame :: struct { min, size: [2]f32 }
+// Reviewed rectangles in source texels, including transparent padding.
+// The generated sheet is not perfectly registered, so draw each cropped frame
+// around its own bottom-center anchor at PLAYER_TEXEL_SCALE world units per texel.
+PLAYER_FRAMES := [4][4]Sprite_Frame{
+    {{{121, 29}, {134, 268}}, {{401, 29}, {138, 270}}, {{706, 29}, {137, 268}}, {{1002, 29}, {138, 269}}},
+    {{{116, 332}, {142, 274}}, {{401, 331}, {140, 273}}, {{705, 332}, {142, 274}}, {{998, 333}, {139, 272}}},
+    {{{112, 641}, {147, 276}}, {{400, 641}, {145, 272}}, {{705, 641}, {147, 277}}, {{1003, 639}, {145, 274}}},
+    {{{112, 945}, {145, 273}}, {{400, 946}, {142, 274}}, {{702, 946}, {145, 271}}, {{998, 944}, {142, 274}}},
+}</code></pre></figure><p>Each Sprite_Frame stores source-texel minimum corner and extent. The table’s rectangles include two pixels of transparent padding around the main opaque silhouette. <code>tools/inspect-art</code> is a small Odin inspection utility that decodes alpha and prints candidate bounds per cell; it does not alter the PNG, produce a runtime atlas, or draw replacement art. The checked-in table is the actual asset contract and should be reviewed whenever the image changes. Tests ensure all rectangles stay inside SHEET_SIZE.</p><p>A frame’s UV minimum is frame.min / SHEET_SIZE; its maximum is (frame.min + frame.size) / SHEET_SIZE. The maximum describes the far edge, not the final included texel center. Nearest sampling plus transparent gutters avoids neighboring-pose bleed at our scales. If you later add bilinear filtering or mipmaps, atlas gutters and edge extrusion need a deliberate policy; clamp-to-edge clamps the entire texture, not every frame inside it.</p><p>The world size of a cropped frame is source size × PLAYER_TEXEL_SCALE (0.16), retaining a constant texel-to-world scale across poses. We place its bottom center near the feet, one unit below the game anchor, instead of stretching every crop to an identical width and height. Stretching independently would make a wide stepping pose become unnaturally narrow and a taller frame shrink. Cropping/anchoring affects rendering only; the 8 × 4 collision footprint remains unchanged.</p></section><section><h2 id="section-5"><span class="section-number" aria-hidden="true">23.5</span>Choose a scale that belongs in the room<a class="heading-link" href="#section-5" aria-label="Link to Choose a scale that belongs in the room">#</a></h2><p>Compare the player with furniture, not just with the full PNG dimensions. The previous 0.1 scale made a 268-texel-tall crop about 27 world units tall, smaller than the chair’s 38-unit vertical span. At 0.16 the same crop is about 43 units tall, and the other poses range from about 43 to 44 units. This gives the player a more readable presence beside the furniture without changing the room’s 384 × 256 world.</p><p>These are art-direction comparisons, not real-world measurements: the room is drawn in a stylized perspective. Keep a constant scale across poses and inspect both open-floor movement and furniture contact. The bottom-center anchor keeps the boots planted as the sprite grows. The 8 × 4 feet box measures floor contact, so it should not automatically grow with the head and torso. If you deliberately make a wider-bodied character, review the footprint and narrow passages separately.</p><p>The <a href="../appendix/sources.html">verification screenshots</a> show the enlarged final character at native presentation scales. F1 reveals the unchanged feet and obstacle boxes. The body can overlap the chair’s painted pixels at contact because the scene uses a small ground footprint and painter’s order; this simple room does not implement furniture foreground layers or per-object depth sorting.</p></section><section><h2 id="section-6"><span class="section-number" aria-hidden="true">23.6</span>The game owns direction and time<a class="heading-link" href="#section-6" aria-label="Link to The game owns direction and time">#</a></h2><figure class="code-block"><figcaption>game/animation.odin · Animate :: proc</figcaption><pre><code class="language-odin">Animate :: proc(animation: ^Animation, requested, displacement: [2]f32, dt: f32) {
+    assert(dt &gt;= 0)
+    facing := animation.facing
+    if requested.x != 0 || requested.y != 0 {
+        if math.abs(requested.x) &gt; math.abs(requested.y) {
+            facing = .East if requested.x &gt; 0 else .West
+        } else { facing = .South if requested.y &gt; 0 else .North }
+    }
+    if facing != animation.facing { animation.phase = 0 }
+    animation.facing = facing
+    animation.moving = displacement.x*displacement.x + displacement.y*displacement.y &gt; 0.000001
+    if animation.moving {
+        animation.phase = math.mod(animation.phase+dt, FRAME_SECONDS*4)
+    } else { animation.phase = 0 }
+}</code></pre></figure><p>Animate receives requested direction, actual resolved displacement, and elapsed seconds. Requested direction chooses facing, even when a wall prevents motion: pressing north against the north wall should face north. The dominant requested axis wins; equal diagonal components choose the vertical direction deterministically. Changing direction resets phase so a new row begins consistently. Releasing all keys retains the last facing direction.</p><p>Actual displacement determines whether the player is walking. We use a small squared-distance threshold to suppress floating-point dust at contact. If neither axis moved meaningfully, moving becomes false and phase resets to zero. Thus holding a key against solid furniture produces an idle pose instead of continuously walking in place. Sliding along an edge still produces a walk because a nonzero resolved displacement exists.</p><p>While moving, phase advances in seconds and wraps over four × 0.1 = 0.4 seconds. Current_Frame converts phase to an integer column by division by 0.1. A modulo keeps the clock bounded instead of letting it grow for hours and lose floating-point precision. We do not increment the frame once per render: that would play faster on faster displays. The cycle is time-driven at the chosen fixed movement speed; a future variable-speed character might instead drive phase by distance traveled to reduce foot sliding.</p><figure class="code-block"><figcaption>game/animation.odin · Current_Frame :: proc</figcaption><pre><code class="language-odin">Current_Frame :: proc(animation: Animation) -&gt; Sprite_Frame {
+    column := 0
+    if animation.moving { column = min(int(animation.phase/FRAME_SECONDS), 3) }
+    return PLAYER_FRAMES[int(animation.facing)][column]
+}</code></pre></figure><p>Current_Frame is a read-only selection. It does not advance phase. If the same simulation state is drawn twice, it chooses the same image both times. Animation phase is presentation state owned by the game because it depends on game meaning—walking, facing, idle—not on a GPU completion callback.</p></section><section><h2 id="section-7"><span class="section-number" aria-hidden="true">23.7</span>Update after collision; draw after update<a class="heading-link" href="#section-7" aria-label="Link to Update after collision; draw after update">#</a></h2><figure class="code-block"><figcaption>game/game.odin · Update :: proc</figcaption><pre><code class="language-odin">Update :: proc(g: ^State, input: Input, dt: f32) {
+    assert(dt &gt;= 0)
+    if input.toggle_collision { g.show_collision = !g.show_collision }
+    direction := input.movement
+    length_squared := direction.x*direction.x + direction.y*direction.y
+    if length_squared &gt; 1 { direction /= math.sqrt(length_squared) }
+    delta := direction * g.speed * dt
+    previous := g.position
+    Move(&amp;g.position, delta, SOLIDS[:])
+    Animate(&amp;g.animation, direction, g.position-previous, dt)
+}</code></pre></figure><p>Add Animation to game.State. Save the previous position just before Move and call Animate afterward with the difference. This is why animation sees blocked movement correctly. Using direction × speed × dt as “actual motion” would ignore collision and animate through a wall even though world.position did not change. The original movement solver, dt cap, and keyboard mapping are unchanged.</p><figure class="code-block"><figcaption>game/game.odin · Draw :: proc</figcaption><pre><code class="language-odin">Draw :: proc(g: ^State, r: ^renderer.State) {
+    renderer.Sprite(r, g.room, {0, 0}, WORLD_SIZE)
+    // Only the displayed position is snapped. Simulation retains subpixel motion.
+    feet := [2]f32{math.round(g.position.x), math.round(g.position.y)}
+    frame := Current_Frame(g.animation)
+    size := frame.size * PLAYER_TEXEL_SCALE
+    anchor := [2]f32{size.x/2, size.y-1}
+    renderer.Sprite(r, g.player, feet-anchor, size,
+                    uv_min = frame.min/SHEET_SIZE, uv_max = (frame.min+frame.size)/SHEET_SIZE)
+    if g.show_collision {
+        for solid in SOLIDS { outline(r, solid, {1, 0.15, 0.05, 0.85}) }
+        outline(r, Feet(g.position), {0.1, 1, 0.2, 1})
+    }
+}</code></pre></figure><p>In game.Init, replace player.png with player-walk.png. We still upload just one player texture once. In Draw, select the current frame, compute its geometry size and anchor, and supply UV bounds through named Sprite arguments. The room and F1 overlay use the default full-image UV rectangle. All player frames share one texture ID, so animation does not add a texture run or a bind-group change.</p><aside class="callout note"><strong>Retain the earlier asset</strong><p>player.png stays in the repository for chapters 19–22. Chapter 23 uses player-walk.png. The final executable does not embed the unused earlier character image. Every checkpoint receives the assets it needs so the previous steps remain independently runnable.</p></aside></section><section><h2 id="section-8"><span class="section-number" aria-hidden="true">23.8</span>A final animated frame, from input to pixels<a class="heading-link" href="#section-8" aria-label="Link to A final animated frame, from input to pixels">#</a></h2><figure class="diagram flow-diagram"><ol aria-label="Animation selects bytes and UVs; the GPU pipeline stays the same."><li>SDL key state</li><li>Move / collision</li><li>Animate</li><li>Frame rectangle</li><li>Sprite vertices</li><li>GPU sampling</li></ol><figcaption>Animation selects bytes and UVs; the GPU pipeline stays the same.</figcaption></figure><p>Startup still follows SDL window → native surface → adapter/device/queue → surface configuration → pipeline/buffers/sampler → game asset upload. During a frame, D supplies an eastward request. Move resolves the displacement. Animate faces east and advances phase only if movement occurred. Current_Frame selects one rectangle from the east row. Sprite writes its UV corners alongside its updated world corners. End_Frame processes callbacks, refreshes configuration if needed, acquires the presentation image, uploads the vertex prefix, encodes room then player then optional overlay, submits, and presents. Temporary surface/encoding references are released; the room and sheet remain resident.</p><p>Surface acquisition precedes vertex upload, so a skipped acquisition avoids that transfer. Animation has changed the values consumed by existing stages, not the ownership of the surface or the meaning of a draw command.</p><p>On contact with the chair, resolved displacement becomes zero. Animate resets to directional column zero. World geometry stops moving, and subsequent frames sample the idle region of the same texture. On release, facing remains east. On a resize, surface dimensions and viewport change, while animation phase, source-texel rectangles, world position, and colliders do not.</p></section><section><h2 id="section-9"><span class="section-number" aria-hidden="true">23.9</span>Test the clock and the boundary<a class="heading-link" href="#section-9" aria-label="Link to Test the clock and the boundary">#</a></h2><p>The final tests add three animation-focused cases: equal elapsed seconds at 60 and 144 updates yield the same phase within tolerance; idle retains facing and resets phase; blocked northward motion chooses a north idle while west/south movement chooses the correct row. Atlas bounds and recorded UV corners are checked as data contracts. These tests complement the native harness, which renders actual sheet frames and checks the final blocked idle state.</p><p>Inspect the real character at a comfortable window scale: no opaque checkerboard, no neighboring poses, no dramatic baseline jumps, and no walking cycle when stopped against furniture. The generated sheet is intentionally modest art. If you refine a frame, review its source rectangle and anchor instead of compensating for an asset problem with collision changes. See the verification appendix for native capture and platform limits.</p></section><section><h2 id="section-10"><span class="section-number" aria-hidden="true">23.10</span>When this work happens<a class="heading-link" href="#section-10" aria-label="Link to When this work happens">#</a></h2><div class="table-scroll"><table><thead><tr><th scope="col">Operation</th><th scope="col">Frequency</th><th scope="col">Reason</th></tr></thead><tbody><tr><td>Decode/upload walk sheet</td><td>Once in game.Init</td><td>All sixteen poses are resident in one GPU texture.</td></tr><tr><td>Choose facing, update animation phase</td><td>Once per simulation update, after collision</td><td>Uses requested direction and actual movement.</td></tr><tr><td>Choose source rectangle and record UVs</td><td>Once per player draw</td><td>No texture upload or new pipeline is required.</td></tr><tr><td>Texture binding</td><td>Same player run as before</td><td>Changing frames within one sheet does not change the texture ID.</td></tr></tbody></table></div></section><section><h2 id="section-11"><span class="section-number" aria-hidden="true">23.11</span>Read the symptom, test a hypothesis<a class="heading-link" href="#section-11" aria-label="Link to Read the symptom, test a hypothesis">#</a></h2><div class="table-scroll"><table><thead><tr><th scope="col">Symptom</th><th scope="col">What to inspect</th><th scope="col">Why it matters</th></tr></thead><tbody><tr><td>Walk speed depends on FPS</td><td>Check whether phase advances in seconds or draw count</td><td>Rendering rate does not define elapsed time.</td></tr><tr><td>Walks in place against a wall</td><td>Compare requested movement with resolved displacement</td><td>Animation should observe the collision result.</td></tr><tr><td>Character shifts wildly between frames</td><td>Check source rectangles and bottom-center registration</td><td>Uniform grid assumptions are unsafe for an imperfectly aligned asset.</td></tr><tr><td>Shows several characters at once</td><td>Inspect UV bounds and normalize by the full sheet size</td><td>A frame rectangle is not a new texture; the shader still samples the whole sheet resource.</td></tr><tr><td>Returns south whenever keys are released</td><td>Check facing update condition</td><td>Idle should retain direction rather than overwrite it with a default.</td></tr></tbody></table></div></section><section><h2 id="section-12"><span class="section-number" aria-hidden="true">23.12</span>Experiments<a class="heading-link" href="#section-12" aria-label="Link to Experiments">#</a></h2><p>These short, optional checks help you test the explanation. Predict the result first, then run the program. Restore the chapter’s baseline before continuing; later chapters assume the supplied checkpoint.</p><ol><li>Change FRAME_SECONDS from 0.1 to 0.15. Movement speed should stay 72 units/second while the gait slows.</li><li>Press diagonally, release, and explain the retained facing using the dominant-axis tie rule.</li><li>While F1 is enabled, watch the fixed feet box through a walking cycle. Changing poses must not change collision size.</li></ol></section><section><h2 id="section-13"><span class="section-number" aria-hidden="true">23.13</span>What we have now<a class="heading-link" href="#section-13" aria-label="Link to What we have now">#</a></h2><p>The player faces four directions, cycles through walking poses while actually moving, and returns to a directional idle pose when released or blocked.</p><p>Before moving on, run this checkpoint and compare it with the stated result. If it differs, use the symptom table above or the complete files below to locate the missing step.</p><p>Run <code>odin run checkpoints/23/src</code> from the book root, with the SDL linker flags for your platform. <a href="../appendix/build.html">Dependency and build instructions →</a></p></section><section class="challenges"><h2 id="section-14"><span class="section-number" aria-hidden="true">23.14</span>Challenges<a class="heading-link" href="#section-14" aria-label="Link to Challenges">#</a></h2><p class="challenge-intro">Optional extensions. The complete game in chapter 23 requires none of these. Work in a separate copy if you want to explore; the supplied final checkpoint remains a working reference.</p><ol><li><h3>A distance-driven gait</h3><p>Advance the walk cycle from actual distance traveled instead of elapsed time. Choose a world distance for one cycle and use resolved displacement after collision.</p><p class="challenge-check"><strong>Check your result:</strong> Changing movement speed changes the pose rate proportionally, while being fully blocked keeps the player idle.</p></li><li><h3>An interaction pose</h3><p>Extend animation state with a brief interaction mode, triggered near the chest or a simple test marker. Reuse a pose or add reviewed frames with matching anchors.</p><p class="challenge-check"><strong>Check your result:</strong> The interaction ends predictably, returns to the previous facing, and never changes collision size or advances time from Draw.</p></li><li><h3>A second inhabitant</h3><p>Add a second character with its own position, facing, and animation clock. It may follow a short waypoint route while sharing the player’s texture ID.</p><p class="challenge-check"><strong>Check your result:</strong> Both characters animate independently using one uploaded sheet. Start with furniture collision; character-to-character collision is an additional design choice.</p></li></ol></section><section><h2 id="section-15"><span class="section-number" aria-hidden="true">23.15</span>Exact code changes and runnable checkpoint<a class="heading-link" href="#section-15" aria-label="Link to Exact code changes and runnable checkpoint">#</a></h2><div class="table-scroll"><table><thead><tr><th scope="col">File</th><th scope="col">Operation</th></tr></thead><tbody><tr><td><code>renderer/renderer.odin</code></td><td>Replace the changed portions shown below; preserve all other code</td></tr><tr><td><code>game/game.odin</code></td><td>Replace the changed portions shown below; preserve all other code</td></tr><tr><td><code>game/animation.odin</code></td><td>Add this file</td></tr></tbody></table></div><details class="change-record"><summary>Exact patch from the preceding checkpoint</summary><p><a download href="../checkpoints/23/changes.patch">Download changes.patch</a> · inspect or apply with <code>patch -p1</code> from your own project directory at the previous checkpoint.</p><figure class="code-block"><pre><code class="language-diff">--- before/renderer/renderer.odin
++++ after/renderer/renderer.odin
+@@ -127,16 +127,19 @@
+ }
+ 
+ Sprite :: proc(r: ^State, texture: Texture_ID, position, size: [2]f32,
+-               tint: [4]f32 = {1, 1, 1, 1}) {
++               tint: [4]f32 = {1, 1, 1, 1},
++               uv_min: [2]f32 = {0, 0}, uv_max: [2]f32 = {1, 1}) {
+     assert(r.recording, &quot;Sprite must be between Begin_Frame and End_Frame&quot;)
+     if r.count == MAX_SPRITES || texture == 0 || int(texture) &gt; r.texture_count {
+         r.overflow = true
+         return
+     }
+     assert(size.x &gt; 0 &amp;&amp; size.y &gt; 0)
++    assert(uv_min.x &gt;= 0 &amp;&amp; uv_min.y &gt;= 0 &amp;&amp; uv_max.x &lt;= 1 &amp;&amp; uv_max.y &lt;= 1)
++    assert(uv_max.x &gt; uv_min.x &amp;&amp; uv_max.y &gt; uv_min.y)
+     corners := [4][2]f32{{0, 0}, {1, 0}, {1, 1}, {0, 1}}
+     for corner, i in corners {
+-        r.vertices[r.count*4+i] = {position + corner*size, corner, tint}
++        r.vertices[r.count*4+i] = {position + corner*size, uv_min + corner*(uv_max-uv_min), tint}
+     }
+     r.texture_ids[r.count] = texture
+     r.count += 1
+--- before/game/game.odin
++++ after/game/game.odin
+@@ -8,6 +8,7 @@
+     speed: f32,
+     room, player: renderer.Texture_ID,
+     show_collision: bool,
++    animation: Animation,
+ }
+ Input :: struct { movement: [2]f32, toggle_collision: bool }
+ 
+@@ -16,7 +17,7 @@
+     g.speed = 72
+     g.room = renderer.Load_PNG(r, #load(&quot;../assets/room.png&quot;, []u8))
+     if g.room == 0 { return false }
+-    g.player = renderer.Load_PNG(r, #load(&quot;../assets/player.png&quot;, []u8))
++    g.player = renderer.Load_PNG(r, #load(&quot;../assets/player-walk.png&quot;, []u8))
+     return g.player != 0
+ }
+ 
+@@ -27,14 +28,20 @@
+     length_squared := direction.x*direction.x + direction.y*direction.y
+     if length_squared &gt; 1 { direction /= math.sqrt(length_squared) }
+     delta := direction * g.speed * dt
++    previous := g.position
+     Move(&amp;g.position, delta, SOLIDS[:])
++    Animate(&amp;g.animation, direction, g.position-previous, dt)
+ }
+ 
+ Draw :: proc(g: ^State, r: ^renderer.State) {
+     renderer.Sprite(r, g.room, {0, 0}, WORLD_SIZE)
+     // Only the displayed position is snapped. Simulation retains subpixel motion.
+     feet := [2]f32{math.round(g.position.x), math.round(g.position.y)}
+-    renderer.Sprite(r, g.player, feet - [2]f32{16, 30}, {32, 32})
++    frame := Current_Frame(g.animation)
++    size := frame.size * PLAYER_TEXEL_SCALE
++    anchor := [2]f32{size.x/2, size.y-1}
++    renderer.Sprite(r, g.player, feet-anchor, size,
++                    uv_min = frame.min/SHEET_SIZE, uv_max = (frame.min+frame.size)/SHEET_SIZE)
+     if g.show_collision {
+         for solid in SOLIDS { outline(r, solid, {1, 0.15, 0.05, 0.85}) }
+         outline(r, Feet(g.position), {0.1, 1, 0.2, 1})
+--- before/game/animation.odin
++++ after/game/animation.odin
+@@ -0,0 +1,41 @@
++package game
++import &quot;core:math&quot;
++
++Facing :: enum { South, West, East, North }
++Animation :: struct { facing: Facing, phase: f32, moving: bool }
++FRAME_SECONDS :: f32(0.1)
++// Visual world units per source texel; independent of the collision footprint.
++PLAYER_TEXEL_SCALE :: f32(0.16)
++SHEET_SIZE :: [2]f32{1254, 1254}
++Sprite_Frame :: struct { min, size: [2]f32 }
++// Reviewed rectangles in source texels, including transparent padding.
++// The generated sheet is not perfectly registered, so draw each cropped frame
++// around its own bottom-center anchor at PLAYER_TEXEL_SCALE world units per texel.
++PLAYER_FRAMES := [4][4]Sprite_Frame{
++    {{{121, 29}, {134, 268}}, {{401, 29}, {138, 270}}, {{706, 29}, {137, 268}}, {{1002, 29}, {138, 269}}},
++    {{{116, 332}, {142, 274}}, {{401, 331}, {140, 273}}, {{705, 332}, {142, 274}}, {{998, 333}, {139, 272}}},
++    {{{112, 641}, {147, 276}}, {{400, 641}, {145, 272}}, {{705, 641}, {147, 277}}, {{1003, 639}, {145, 274}}},
++    {{{112, 945}, {145, 273}}, {{400, 946}, {142, 274}}, {{702, 946}, {145, 271}}, {{998, 944}, {142, 274}}},
++}
++
++Animate :: proc(animation: ^Animation, requested, displacement: [2]f32, dt: f32) {
++    assert(dt &gt;= 0)
++    facing := animation.facing
++    if requested.x != 0 || requested.y != 0 {
++        if math.abs(requested.x) &gt; math.abs(requested.y) {
++            facing = .East if requested.x &gt; 0 else .West
++        } else { facing = .South if requested.y &gt; 0 else .North }
++    }
++    if facing != animation.facing { animation.phase = 0 }
++    animation.facing = facing
++    animation.moving = displacement.x*displacement.x + displacement.y*displacement.y &gt; 0.000001
++    if animation.moving {
++        animation.phase = math.mod(animation.phase+dt, FRAME_SECONDS*4)
++    } else { animation.phase = 0 }
++}
++
++Current_Frame :: proc(animation: Animation) -&gt; Sprite_Frame {
++    column := 0
++    if animation.moving { column = min(int(animation.phase/FRAME_SECONDS), 3) }
++    return PLAYER_FRAMES[int(animation.facing)][column]
++}</code></pre></figure></details><p>Complete end-of-chapter files follow. These are already present in <code>checkpoints/23/</code>; no assembly from excerpts is required.</p><p>Binary assets are separate from the text patch: <a href="../checkpoints/23/assets/room.png" download>room.png</a> · <a href="../checkpoints/23/assets/player.png" download>player.png</a> · <a href="../checkpoints/23/assets/player-walk.png" download>player-walk.png</a>. Copy them into assets/ in this checkpoint.</p><details class="source-file"><summary>renderer/renderer.odin <span>241 lines</span></summary><p><a download href="../checkpoints/23/renderer/renderer.odin">Download this checkpoint’s renderer/renderer.odin</a></p><figure class="code-block"><figcaption>checkpoints/23/renderer/renderer.odin · complete file</figcaption><pre><code class="language-odin" data-source="checkpoints/23/renderer/renderer.odin">package renderer
+import &quot;core:fmt&quot;
+import &quot;core:math&quot;
+import sdl &quot;vendor:sdl3&quot;
+import wgpu &quot;vendor:wgpu&quot;
+
+// API: Init, Shutdown, Load_PNG, Begin_Frame, Sprite, Rect, End_Frame, Resize.
+// All calls occur on SDL's main thread. State must not be copied after Init.
+Texture_ID :: distinct u32
+Frame_Result :: enum { Presented, Skipped, Fatal }
+MAX_SPRITES :: 256
+MAX_TEXTURES :: 8
+Vertex :: struct { position, uv: [2]f32, tint: [4]f32 }
+View_Uniform :: struct #align(16) { size, padding: [2]f32 }
+#assert(size_of(Vertex) == 32)
+#assert(offset_of(Vertex, uv) == 8)
+#assert(offset_of(Vertex, tint) == 16)
+#assert(size_of(View_Uniform) == 16)
+Texture_Slot :: struct { texture: wgpu.Texture, view: wgpu.TextureView, group: wgpu.BindGroup }
+State :: struct {
+    gpu: GPU,
+    window: ^sdl.Window,
+    pipeline: wgpu.RenderPipeline,
+    vertex_buffer, index_buffer, view_buffer: wgpu.Buffer,
+    view_group: wgpu.BindGroup,
+    texture_layout: wgpu.BindGroupLayout,
+    sampler: wgpu.Sampler,
+    textures: [MAX_TEXTURES]Texture_Slot,
+    texture_count: int,
+    white: Texture_ID,
+    vertices: [MAX_SPRITES * 4]Vertex,
+    texture_ids: [MAX_SPRITES]Texture_ID,
+    count: int,
+    view_size: [2]f32,
+    recording, overflow: bool,
+}
+
+Init :: proc(r: ^State, window: ^sdl.Window) -&gt; bool {
+    r.window = window
+    if !gpu_init(&amp;r.gpu, window) { return false }
+    r.vertex_buffer = wgpu.DeviceCreateBuffer(r.gpu.device, &amp;wgpu.BufferDescriptor{
+        label = &quot;sprite vertices&quot;, size = size_of(r.vertices), usage = {.Vertex, .CopyDst},
+    })
+    indices: [MAX_SPRITES * 6]u16
+    quad := [6]u16{0, 1, 2, 0, 2, 3}
+    for i in 0..&lt;MAX_SPRITES {
+        for value, j in quad { indices[i*6+j] = u16(i*4) + value }
+    }
+    r.index_buffer = wgpu.DeviceCreateBuffer(r.gpu.device, &amp;wgpu.BufferDescriptor{
+        label = &quot;quad indices&quot;, size = size_of(indices), usage = {.Index, .CopyDst},
+    })
+    r.view_buffer = wgpu.DeviceCreateBuffer(r.gpu.device, &amp;wgpu.BufferDescriptor{
+        label = &quot;world extent&quot;, size = size_of(View_Uniform), usage = {.Uniform, .CopyDst},
+    })
+    if r.vertex_buffer == nil || r.index_buffer == nil || r.view_buffer == nil { return false }
+    wgpu.QueueWriteBuffer(r.gpu.queue, r.index_buffer, 0, &amp;indices, size_of(indices))
+    view_entry := wgpu.BindGroupLayoutEntry{
+        binding = 0, visibility = {.Vertex},
+        buffer = {type = .Uniform, minBindingSize = size_of(View_Uniform)},
+    }
+    view_layout := wgpu.DeviceCreateBindGroupLayout(r.gpu.device, &amp;wgpu.BindGroupLayoutDescriptor{
+        entryCount = 1, entries = &amp;view_entry,
+    })
+    if view_layout == nil { return false }
+    defer wgpu.BindGroupLayoutRelease(view_layout)
+    uniform_entry := wgpu.BindGroupEntry{binding = 0, buffer = r.view_buffer, size = size_of(View_Uniform)}
+    r.view_group = wgpu.DeviceCreateBindGroup(r.gpu.device, &amp;wgpu.BindGroupDescriptor{
+        layout = view_layout, entryCount = 1, entries = &amp;uniform_entry,
+    })
+    texture_entries := [2]wgpu.BindGroupLayoutEntry{
+        {binding = 0, visibility = {.Fragment}, texture = {sampleType = .Float, viewDimension = ._2D}},
+        {binding = 1, visibility = {.Fragment}, sampler = {type = .Filtering}},
+    }
+    r.texture_layout = wgpu.DeviceCreateBindGroupLayout(r.gpu.device, &amp;wgpu.BindGroupLayoutDescriptor{
+        entryCount = len(texture_entries), entries = raw_data(texture_entries[:]),
+    })
+    r.sampler = wgpu.DeviceCreateSampler(r.gpu.device, &amp;wgpu.SamplerDescriptor{
+        label = &quot;nearest, no repeat&quot;, addressModeU = .ClampToEdge,
+        addressModeV = .ClampToEdge, addressModeW = .ClampToEdge,
+        minFilter = .Nearest, magFilter = .Nearest, mipmapFilter = .Nearest,
+        lodMinClamp = 0, lodMaxClamp = 0, maxAnisotropy = 1,
+    })
+    if r.view_group == nil || r.texture_layout == nil || r.sampler == nil { return false }
+    layouts := [2]wgpu.BindGroupLayout{view_layout, r.texture_layout}
+    layout := wgpu.DeviceCreatePipelineLayout(r.gpu.device, &amp;wgpu.PipelineLayoutDescriptor{
+        bindGroupLayoutCount = len(layouts), bindGroupLayouts = raw_data(layouts[:]),
+    })
+    if layout == nil { return false }
+    defer wgpu.PipelineLayoutRelease(layout)
+    source := wgpu.ShaderSourceWGSL{chain = {sType = .ShaderSourceWGSL}, code = #load(&quot;sprites.wgsl&quot;, string)}
+    shader := wgpu.DeviceCreateShaderModule(r.gpu.device, &amp;wgpu.ShaderModuleDescriptor{nextInChain = &amp;source.chain})
+    if shader == nil { return false }
+    defer wgpu.ShaderModuleRelease(shader)
+    blend := wgpu.BlendState{
+        color = {operation = .Add, srcFactor = .SrcAlpha, dstFactor = .OneMinusSrcAlpha},
+        alpha = {operation = .Add, srcFactor = .One, dstFactor = .OneMinusSrcAlpha},
+    }
+    target := wgpu.ColorTargetState{format = r.gpu.config.format, blend = &amp;blend, writeMask = {.Red, .Green, .Blue, .Alpha}}
+    fragment := wgpu.FragmentState{module = shader, entryPoint = &quot;fs_main&quot;, targetCount = 1, targets = &amp;target}
+    attributes := [3]wgpu.VertexAttribute{
+        {format = .Float32x2, offset = 0, shaderLocation = 0},
+        {format = .Float32x2, offset = 8, shaderLocation = 1},
+        {format = .Float32x4, offset = 16, shaderLocation = 2},
+    }
+    vertex_layout := wgpu.VertexBufferLayout{arrayStride = size_of(Vertex), stepMode = .Vertex,
+        attributeCount = len(attributes), attributes = raw_data(attributes[:])}
+    r.pipeline = wgpu.DeviceCreateRenderPipeline(r.gpu.device, &amp;wgpu.RenderPipelineDescriptor{
+        label = &quot;sprite pipeline&quot;, layout = layout,
+        vertex = {module = shader, entryPoint = &quot;vs_main&quot;, bufferCount = 1, buffers = &amp;vertex_layout},
+        fragment = &amp;fragment, primitive = {topology = .TriangleList, frontFace = .CCW, cullMode = .None},
+        multisample = {count = 1, mask = 0xffffffff},
+    })
+    if r.pipeline == nil || gpu_failed() { return false }
+    white := [4]u8{255, 255, 255, 255}
+    r.white = upload_rgba(r, white[:], 1, 1)
+    return r.white != 0 &amp;&amp; !gpu_failed()
+}
+
+Resize :: proc(r: ^State) { r.gpu.dirty = true }
+
+Begin_Frame :: proc(r: ^State, world_size: [2]f32) {
+    assert(!r.recording &amp;&amp; world_size.x &gt; 0 &amp;&amp; world_size.y &gt; 0)
+    r.recording = true
+    r.count = 0
+    r.overflow = false
+    r.view_size = world_size
+}
+
+Sprite :: proc(r: ^State, texture: Texture_ID, position, size: [2]f32,
+               tint: [4]f32 = {1, 1, 1, 1},
+               uv_min: [2]f32 = {0, 0}, uv_max: [2]f32 = {1, 1}) {
+    assert(r.recording, &quot;Sprite must be between Begin_Frame and End_Frame&quot;)
+    if r.count == MAX_SPRITES || texture == 0 || int(texture) &gt; r.texture_count {
+        r.overflow = true
+        return
+    }
+    assert(size.x &gt; 0 &amp;&amp; size.y &gt; 0)
+    assert(uv_min.x &gt;= 0 &amp;&amp; uv_min.y &gt;= 0 &amp;&amp; uv_max.x &lt;= 1 &amp;&amp; uv_max.y &lt;= 1)
+    assert(uv_max.x &gt; uv_min.x &amp;&amp; uv_max.y &gt; uv_min.y)
+    corners := [4][2]f32{{0, 0}, {1, 0}, {1, 1}, {0, 1}}
+    for corner, i in corners {
+        r.vertices[r.count*4+i] = {position + corner*size, uv_min + corner*(uv_max-uv_min), tint}
+    }
+    r.texture_ids[r.count] = texture
+    r.count += 1
+}
+
+Rect :: proc(r: ^State, position, size: [2]f32, color: [4]f32) {
+    Sprite(r, r.white, position, size, color)
+}
+
+End_Frame :: proc(r: ^State) -&gt; Frame_Result {
+    assert(r.recording)
+    r.recording = false
+    if r.overflow { fmt.eprintln(&quot;Sprite capacity exceeded or invalid texture ID&quot;); return .Fatal }
+    gpu := &amp;r.gpu
+    wgpu.InstanceProcessEvents(gpu.instance)
+    if gpu_failed() { return .Fatal }
+    if !gpu_refresh_surface(gpu, r.window) {
+        if gpu_failed() { return .Fatal }
+        return .Skipped
+    }
+    frame := wgpu.SurfaceGetCurrentTexture(gpu.platform.surface)
+    defer if frame.texture != nil { wgpu.TextureRelease(frame.texture) }
+    #partial switch frame.status {
+    case .SuccessOptimal:
+    case .SuccessSuboptimal: gpu.dirty = true
+    case .Timeout, .Occluded: return .Skipped
+    case .Outdated: gpu.dirty = true; return .Skipped
+    case: fmt.eprintln(&quot;Surface acquisition:&quot;, frame.status); return .Fatal
+    }
+    if frame.texture == nil { return .Fatal }
+    view := wgpu.TextureCreateView(frame.texture, nil)
+    if view == nil { return .Fatal }
+    defer wgpu.TextureViewRelease(view)
+    uniforms := View_Uniform{size = r.view_size}
+    wgpu.QueueWriteBuffer(gpu.queue, r.view_buffer, 0, &amp;uniforms, size_of(uniforms))
+    if r.count &gt; 0 {
+        wgpu.QueueWriteBuffer(gpu.queue, r.vertex_buffer, 0, &amp;r.vertices[0], uint(r.count*4*size_of(Vertex)))
+    }
+    encoder := wgpu.DeviceCreateCommandEncoder(gpu.device, &amp;wgpu.CommandEncoderDescriptor{label = &quot;room frame&quot;})
+    if encoder == nil { return .Fatal }
+    defer wgpu.CommandEncoderRelease(encoder)
+    attachment := wgpu.RenderPassColorAttachment{view = view, depthSlice = wgpu.DEPTH_SLICE_UNDEFINED,
+        loadOp = .Clear, storeOp = .Store, clearValue = {0.012, 0.018, 0.025, 1}}
+    pass := wgpu.CommandEncoderBeginRenderPass(encoder, &amp;wgpu.RenderPassDescriptor{
+        colorAttachmentCount = 1, colorAttachments = &amp;attachment,
+    })
+    if pass == nil { return .Fatal }
+    defer wgpu.RenderPassEncoderRelease(pass)
+    width, height := f32(gpu.config.width), f32(gpu.config.height)
+    scale := min(width/r.view_size.x, height/r.view_size.y)
+    if scale &gt;= 1 { scale = math.floor(scale) }
+    viewport := r.view_size * scale
+    // Guard floating-point roundoff at very small fractional fit scales.
+    viewport.x = min(viewport.x, width)
+    viewport.y = min(viewport.y, height)
+    origin := [2]f32{math.floor((width-viewport.x)/2), math.floor((height-viewport.y)/2)}
+    wgpu.RenderPassEncoderSetViewport(pass, origin.x, origin.y, viewport.x, viewport.y, 0, 1)
+    wgpu.RenderPassEncoderSetScissorRect(pass, u32(origin.x), u32(origin.y), u32(math.ceil(viewport.x)), u32(math.ceil(viewport.y)))
+    wgpu.RenderPassEncoderSetPipeline(pass, r.pipeline)
+    wgpu.RenderPassEncoderSetBindGroup(pass, 0, r.view_group)
+    wgpu.RenderPassEncoderSetVertexBuffer(pass, 0, r.vertex_buffer, 0, size_of(r.vertices))
+    wgpu.RenderPassEncoderSetIndexBuffer(pass, r.index_buffer, .Uint16, 0, MAX_SPRITES*6*size_of(u16))
+    // Adjacent equal textures form a run. Never sort transparent sprites by texture.
+    first := 0
+    for first &lt; r.count {
+        end := first + 1
+        for end &lt; r.count &amp;&amp; r.texture_ids[end] == r.texture_ids[first] { end += 1 }
+        slot := &amp;r.textures[int(r.texture_ids[first])-1]
+        wgpu.RenderPassEncoderSetBindGroup(pass, 1, slot.group)
+        wgpu.RenderPassEncoderDrawIndexed(pass, u32((end-first)*6), 1, u32(first*6), 0, 0)
+        first = end
+    }
+    wgpu.RenderPassEncoderEnd(pass)
+    commands := wgpu.CommandEncoderFinish(encoder, &amp;wgpu.CommandBufferDescriptor{})
+    if commands == nil { return .Fatal }
+    defer wgpu.CommandBufferRelease(commands)
+    if gpu_failed() { return .Fatal }
+    wgpu.QueueSubmit(gpu.queue, []wgpu.CommandBuffer{commands})
+    if wgpu.SurfacePresent(gpu.platform.surface) != .Success || gpu_failed() { return .Fatal }
+    return .Presented
+}
+
+Shutdown :: proc(r: ^State) {
+    if r.gpu.device != nil { _ = wgpu.DevicePoll(r.gpu.device, true, nil) }
+    for &amp;slot in r.textures {
+        if slot.group != nil { wgpu.BindGroupRelease(slot.group) }
+        if slot.view != nil { wgpu.TextureViewRelease(slot.view) }
+        if slot.texture != nil { wgpu.TextureRelease(slot.texture) }
+    }
+    if r.sampler != nil { wgpu.SamplerRelease(r.sampler) }
+    if r.texture_layout != nil { wgpu.BindGroupLayoutRelease(r.texture_layout) }
+    if r.view_group != nil { wgpu.BindGroupRelease(r.view_group) }
+    if r.view_buffer != nil { wgpu.BufferRelease(r.view_buffer) }
+    if r.index_buffer != nil { wgpu.BufferRelease(r.index_buffer) }
+    if r.vertex_buffer != nil { wgpu.BufferRelease(r.vertex_buffer) }
+    if r.pipeline != nil { wgpu.RenderPipelineRelease(r.pipeline) }
+    gpu_destroy(&amp;r.gpu)
+    r^ = {}
+}
+</code></pre></figure></details><details class="source-file"><summary>renderer/texture.odin <span>49 lines</span></summary><p><a download href="../checkpoints/23/renderer/texture.odin">Download this checkpoint’s renderer/texture.odin</a></p><figure class="code-block"><figcaption>checkpoints/23/renderer/texture.odin · complete file</figcaption><pre><code class="language-odin" data-source="checkpoints/23/renderer/texture.odin">package renderer
+import &quot;core:c&quot;
+import &quot;core:fmt&quot;
+import stbi &quot;vendor:stb/image&quot;
+import wgpu &quot;vendor:wgpu&quot;
+
+// Trusted, embedded PNG assets only. The decoder does not create GPU resources.
+Load_PNG :: proc(r: ^State, encoded: []u8) -&gt; Texture_ID {
+    assert(!r.recording, &quot;Load textures during initialization&quot;)
+    if len(encoded) == 0 || len(encoded) &gt; 0x7fffffff { return 0 }
+    width, height, channels: c.int
+    if stbi.info_from_memory(raw_data(encoded), c.int(len(encoded)), &amp;width, &amp;height, &amp;channels) == 0 {
+        fmt.eprintln(&quot;Invalid image header&quot;); return 0
+    }
+    if width &lt;= 0 || height &lt;= 0 || u32(width) &gt; r.gpu.max_texture_dimension ||
+       u32(height) &gt; r.gpu.max_texture_dimension { fmt.eprintln(&quot;Image dimensions exceed device limits&quot;); return 0 }
+    pixels := stbi.load_from_memory(raw_data(encoded), c.int(len(encoded)), &amp;width, &amp;height, &amp;channels, 4)
+    if pixels == nil { fmt.eprintln(&quot;PNG decoding failed&quot;); return 0 }
+    defer stbi.image_free(pixels)
+    return upload_rgba(r, pixels[:int(width)*int(height)*4], u32(width), u32(height))
+}
+
+@(private)
+upload_rgba :: proc(r: ^State, pixels: []u8, width, height: u32) -&gt; Texture_ID {
+    if r.texture_count == MAX_TEXTURES { fmt.eprintln(&quot;Texture capacity exceeded&quot;); return 0 }
+    slot := &amp;r.textures[r.texture_count]
+    slot.texture = wgpu.DeviceCreateTexture(r.gpu.device, &amp;wgpu.TextureDescriptor{
+        label = &quot;sprite RGBA&quot;, size = {width, height, 1}, dimension = ._2D,
+        format = .RGBA8UnormSrgb, mipLevelCount = 1, sampleCount = 1,
+        usage = {.TextureBinding, .CopyDst},
+    })
+    if slot.texture == nil { return 0 }
+    destination := wgpu.TexelCopyTextureInfo{texture = slot.texture, aspect = .All}
+    layout := wgpu.TexelCopyBufferLayout{bytesPerRow = width*4, rowsPerImage = height}
+    extent := wgpu.Extent3D{width, height, 1}
+    wgpu.QueueWriteTexture(r.gpu.queue, &amp;destination, raw_data(pixels), uint(len(pixels)), &amp;layout, &amp;extent)
+    slot.view = wgpu.TextureCreateView(slot.texture, nil)
+    if slot.view == nil { return 0 }
+    entries := [2]wgpu.BindGroupEntry{
+        {binding = 0, textureView = slot.view},
+        {binding = 1, sampler = r.sampler},
+    }
+    slot.group = wgpu.DeviceCreateBindGroup(r.gpu.device, &amp;wgpu.BindGroupDescriptor{
+        layout = r.texture_layout, entryCount = len(entries), entries = raw_data(entries[:]),
+    })
+    if slot.group == nil || gpu_failed() { return 0 }
+    r.texture_count += 1
+    return Texture_ID(r.texture_count)
+}
+</code></pre></figure></details><details class="source-file"><summary>renderer/sprites.wgsl <span>22 lines</span></summary><p><a download href="../checkpoints/23/renderer/sprites.wgsl">Download this checkpoint’s renderer/sprites.wgsl</a></p><figure class="code-block"><figcaption>checkpoints/23/renderer/sprites.wgsl · complete file</figcaption><pre><code class="language-wgsl" data-source="checkpoints/23/renderer/sprites.wgsl">struct View { size: vec2f, padding: vec2f }
+@group(0) @binding(0) var&lt;uniform&gt; view: View;
+@group(1) @binding(0) var sprite: texture_2d&lt;f32&gt;;
+@group(1) @binding(1) var sprite_sampler: sampler;
+struct Vertex_Output {
+    @builtin(position) position: vec4f,
+    @location(0) uv: vec2f,
+    @location(1) tint: vec4f,
+}
+@vertex fn vs_main(@location(0) position: vec2f,
+                  @location(1) uv: vec2f,
+                  @location(2) tint: vec4f) -&gt; Vertex_Output {
+    var out: Vertex_Output;
+    out.position = vec4f(position.x / view.size.x * 2.0 - 1.0,
+                        1.0 - position.y / view.size.y * 2.0, 0.0, 1.0);
+    out.uv = uv;
+    out.tint = tint;
+    return out;
+}
+@fragment fn fs_main(in: Vertex_Output) -&gt; @location(0) vec4f {
+    return textureSample(sprite, sprite_sampler, in.uv) * in.tint;
+}
+</code></pre></figure></details><details class="source-file"><summary>game/game.odin <span>57 lines</span></summary><p><a download href="../checkpoints/23/game/game.odin">Download this checkpoint’s game/game.odin</a></p><figure class="code-block"><figcaption>checkpoints/23/game/game.odin · complete file</figcaption><pre><code class="language-odin" data-source="checkpoints/23/game/game.odin">package game
+import &quot;core:math&quot;
+import renderer &quot;../renderer&quot;
+
+WORLD_SIZE :: [2]f32{384, 256}
+State :: struct {
+    position: [2]f32,
+    speed: f32,
+    room, player: renderer.Texture_ID,
+    show_collision: bool,
+    animation: Animation,
+}
+Input :: struct { movement: [2]f32, toggle_collision: bool }
+
+Init :: proc(g: ^State, r: ^renderer.State) -&gt; bool {
+    g.position = {192, 205}
+    g.speed = 72
+    g.room = renderer.Load_PNG(r, #load(&quot;../assets/room.png&quot;, []u8))
+    if g.room == 0 { return false }
+    g.player = renderer.Load_PNG(r, #load(&quot;../assets/player-walk.png&quot;, []u8))
+    return g.player != 0
+}
+
+Update :: proc(g: ^State, input: Input, dt: f32) {
+    assert(dt &gt;= 0)
+    if input.toggle_collision { g.show_collision = !g.show_collision }
+    direction := input.movement
+    length_squared := direction.x*direction.x + direction.y*direction.y
+    if length_squared &gt; 1 { direction /= math.sqrt(length_squared) }
+    delta := direction * g.speed * dt
+    previous := g.position
+    Move(&amp;g.position, delta, SOLIDS[:])
+    Animate(&amp;g.animation, direction, g.position-previous, dt)
+}
+
+Draw :: proc(g: ^State, r: ^renderer.State) {
+    renderer.Sprite(r, g.room, {0, 0}, WORLD_SIZE)
+    // Only the displayed position is snapped. Simulation retains subpixel motion.
+    feet := [2]f32{math.round(g.position.x), math.round(g.position.y)}
+    frame := Current_Frame(g.animation)
+    size := frame.size * PLAYER_TEXEL_SCALE
+    anchor := [2]f32{size.x/2, size.y-1}
+    renderer.Sprite(r, g.player, feet-anchor, size,
+                    uv_min = frame.min/SHEET_SIZE, uv_max = (frame.min+frame.size)/SHEET_SIZE)
+    if g.show_collision {
+        for solid in SOLIDS { outline(r, solid, {1, 0.15, 0.05, 0.85}) }
+        outline(r, Feet(g.position), {0.1, 1, 0.2, 1})
+    }
+}
+
+@(private)
+outline :: proc(r: ^renderer.State, box: Box, color: [4]f32) {
+    renderer.Rect(r, box.min, {box.size.x, 1}, color)
+    renderer.Rect(r, box.min + [2]f32{0, box.size.y-1}, {box.size.x, 1}, color)
+    renderer.Rect(r, box.min, {1, box.size.y}, color)
+    renderer.Rect(r, box.min + [2]f32{box.size.x-1, 0}, {1, box.size.y}, color)
+}
+</code></pre></figure></details><details class="source-file"><summary>game/collision.odin <span>44 lines</span></summary><p><a download href="../checkpoints/23/game/collision.odin">Download this checkpoint’s game/collision.odin</a></p><figure class="code-block"><figcaption>checkpoints/23/game/collision.odin · complete file</figcaption><pre><code class="language-odin" data-source="checkpoints/23/game/collision.odin">package game
+
+Box :: struct { min, size: [2]f32 }
+// Hand-authored against room.png at 1536x1024, displayed at 384x256.
+// This table is gameplay data, not inferred from the artwork or its alpha.
+SOLIDS := [?]Box{
+    {{0, 0}, {384, 48}},       // north wall
+    {{0, 240}, {384, 16}},     // south wall; doorway is decorative
+    {{0, 48}, {24, 192}},      // west wall
+    {{362, 48}, {22, 192}},    // east wall
+    {{26, 24}, {65, 118}},     // bed
+    {{90, 41}, {27, 34}},      // bedside table
+    {{300, 16}, {60, 65}},     // bookshelf
+    {{274, 90}, {84, 60}},     // work table
+    {{295, 134}, {31, 38}},    // chair
+    {{26, 160}, {54, 40}},     // chest
+    {{17, 196}, {33, 39}},     // plant
+}
+Feet :: proc(position: [2]f32) -&gt; Box { return {position - [2]f32{4, 3}, {8, 4}} }
+Overlaps :: proc(a, b: Box) -&gt; bool {
+    return a.min.x &lt; b.min.x+b.size.x &amp;&amp; a.min.x+a.size.x &gt; b.min.x &amp;&amp;
+           a.min.y &lt; b.min.y+b.size.y &amp;&amp; a.min.y+a.size.y &gt; b.min.y
+}
+
+// Axis-separated swept AABB: clip displacement at the first crossed solid edge.
+// Starting feet must be outside all solids. Obstacles are static, axis-aligned.
+Move :: proc(position: ^[2]f32, delta: [2]f32, solids: []Box) {
+    for axis in 0..&lt;2 {
+        other := 1-axis
+        feet := Feet(position^)
+        allowed := delta[axis]
+        for solid in solids {
+            if feet.min[other] &gt;= solid.min[other]+solid.size[other] ||
+               feet.min[other]+feet.size[other] &lt;= solid.min[other] { continue }
+            near := feet.min[axis]
+            far := near+feet.size[axis]
+            solid_near := solid.min[axis]
+            solid_far := solid_near+solid.size[axis]
+            if allowed &gt; 0 &amp;&amp; far &lt;= solid_near { allowed = min(allowed, solid_near-far) }
+            if allowed &lt; 0 &amp;&amp; near &gt;= solid_far { allowed = max(allowed, solid_far-near) }
+        }
+        position[axis] += allowed
+    }
+}
+</code></pre></figure></details><details class="source-file"><summary>src/main.odin <span>54 lines</span></summary><p><a download href="../checkpoints/23/src/main.odin">Download this checkpoint’s src/main.odin</a></p><figure class="code-block"><figcaption>checkpoints/23/src/main.odin · complete file</figcaption><pre><code class="language-odin" data-source="checkpoints/23/src/main.odin">package room
+import &quot;core:fmt&quot;
+import sdl &quot;vendor:sdl3&quot;
+import renderer &quot;../renderer&quot;
+import game &quot;../game&quot;
+
+main :: proc() {
+    if !sdl.Init({.VIDEO}) { fmt.eprintln(&quot;SDL initialization:&quot;, sdl.GetError()); return }
+    defer sdl.Quit()
+    flags: sdl.WindowFlags = {.RESIZABLE, .HIGH_PIXEL_DENSITY}
+    when ODIN_OS == .Darwin { flags += {.METAL} }
+    window := sdl.CreateWindow(&quot;Native Pixels — WASD / arrows · F1 collisions&quot;, 1152, 768, flags)
+    if window == nil { fmt.eprintln(&quot;Window creation:&quot;, sdl.GetError()); return }
+    defer sdl.DestroyWindow(window)
+    if !sdl.ShowWindow(window) { fmt.eprintln(&quot;Show window:&quot;, sdl.GetError()); return }
+    if !sdl.RaiseWindow(window) { fmt.eprintln(&quot;Window focus request:&quot;, sdl.GetError()) }
+    rendering: renderer.State
+    defer renderer.Shutdown(&amp;rendering)
+    if !renderer.Init(&amp;rendering, window) { fmt.eprintln(&quot;Renderer initialization failed&quot;); return }
+    world: game.State
+    if !game.Init(&amp;world, &amp;rendering) { fmt.eprintln(&quot;Game assets failed to load&quot;); return }
+    previous_ticks := sdl.GetTicksNS()
+    running := true
+    for running {
+        input: game.Input
+        event: sdl.Event
+        for sdl.PollEvent(&amp;event) {
+            #partial switch event.type {
+            case .QUIT, .WINDOW_CLOSE_REQUESTED: running = false
+            case .WINDOW_PIXEL_SIZE_CHANGED, .WINDOW_RESTORED: renderer.Resize(&amp;rendering)
+            case .KEY_DOWN:
+                if event.key.scancode == .F1 &amp;&amp; !event.key.repeat { input.toggle_collision = true }
+            }
+        }
+        if !running { break }
+        now := sdl.GetTicksNS()
+        dt := min(f64(now-previous_ticks)/1_000_000_000.0, 0.05)
+        previous_ticks = now
+        if .MINIMIZED in sdl.GetWindowFlags(window) { sdl.Delay(10); continue }
+        if .INPUT_FOCUS in sdl.GetWindowFlags(window) {
+            keys := sdl.GetKeyboardState(nil)
+            if keys[sdl.Scancode.D] || keys[sdl.Scancode.RIGHT] { input.movement.x += 1 }
+            if keys[sdl.Scancode.A] || keys[sdl.Scancode.LEFT] { input.movement.x -= 1 }
+            if keys[sdl.Scancode.S] || keys[sdl.Scancode.DOWN] { input.movement.y += 1 }
+            if keys[sdl.Scancode.W] || keys[sdl.Scancode.UP] { input.movement.y -= 1 }
+        }
+        game.Update(&amp;world, input, f32(dt))
+        renderer.Begin_Frame(&amp;rendering, game.WORLD_SIZE)
+        game.Draw(&amp;world, &amp;rendering)
+        result := renderer.End_Frame(&amp;rendering)
+        if result == .Fatal { fmt.eprintln(&quot;Rendering stopped after a GPU or API error&quot;); break }
+        if result == .Skipped { sdl.Delay(10) }
+    }
+}
+</code></pre></figure></details><details class="source-file"><summary>renderer/gpu.odin <span>173 lines</span></summary><p><a download href="../checkpoints/23/renderer/gpu.odin">Download this checkpoint’s renderer/gpu.odin</a></p><figure class="code-block"><figcaption>checkpoints/23/renderer/gpu.odin · complete file</figcaption><pre><code class="language-odin" data-source="checkpoints/23/renderer/gpu.odin">package renderer
+import &quot;core:fmt&quot;
+import &quot;core:c&quot;
+import &quot;base:runtime&quot;
+import &quot;base:intrinsics&quot;
+import sdl &quot;vendor:sdl3&quot;
+import wgpu &quot;vendor:wgpu&quot;
+
+GPU :: struct {
+    instance: wgpu.Instance,
+    platform: Platform_Surface,
+    adapter: wgpu.Adapter,
+    device: wgpu.Device,
+    queue: wgpu.Queue,
+    adapter_done, device_done: bool,
+    config: wgpu.SurfaceConfiguration,
+    configured, dirty: bool,
+    max_texture_dimension: u32,
+}
+
+gpu_init :: proc(gpu: ^GPU, window: ^sdl.Window) -&gt; bool {
+    gpu.instance = wgpu.CreateInstance(nil)
+    if gpu.instance == nil {
+        fmt.eprintln(&quot;Cannot create a WebGPU instance&quot;)
+        return false
+    }
+    gpu.platform = platform_surface_create(gpu.instance, window)
+    if gpu.platform.surface == nil {
+        fmt.eprintln(&quot;Cannot connect WebGPU to the SDL window&quot;)
+        return false
+    }
+    if !gpu_request_device(gpu) { return false }
+    if !gpu_choose_surface(gpu) { return false }
+    gpu.dirty = true
+    _ = gpu_refresh_surface(gpu, window)
+    return !gpu_failed()
+}
+
+gpu_destroy :: proc(gpu: ^GPU) {
+    if gpu.device != nil { _ = wgpu.DevicePoll(gpu.device, true, nil) }
+    if gpu.configured { wgpu.SurfaceUnconfigure(gpu.platform.surface) }
+    if gpu.queue != nil { wgpu.QueueRelease(gpu.queue) }
+    if gpu.device != nil { wgpu.DeviceRelease(gpu.device) }
+    if gpu.adapter != nil { wgpu.AdapterRelease(gpu.adapter) }
+    platform_surface_destroy(&amp;gpu.platform)
+    if gpu.instance != nil { wgpu.InstanceRelease(gpu.instance) }
+    gpu^ = {}
+}
+
+// Process-lifetime storage: native diagnostic callbacks may arrive on other threads.
+gpu_fault: bool
+
+gpu_failed :: proc() -&gt; bool { return intrinsics.atomic_load(&amp;gpu_fault) }
+
+adapter_ready :: proc &quot;c&quot; (status: wgpu.RequestAdapterStatus, adapter: wgpu.Adapter,
+                          message: wgpu.StringView, userdata1, userdata2: rawptr) {
+    context = runtime.default_context()
+    gpu := cast(^GPU)userdata1
+    gpu.adapter_done = true
+    if status == .Success { gpu.adapter = adapter }
+    else { fmt.eprintln(&quot;Adapter request:&quot;, status, message) }
+}
+
+device_ready :: proc &quot;c&quot; (status: wgpu.RequestDeviceStatus, device: wgpu.Device,
+                         message: wgpu.StringView, userdata1, userdata2: rawptr) {
+    context = runtime.default_context()
+    gpu := cast(^GPU)userdata1
+    gpu.device_done = true
+    if status == .Success { gpu.device = device }
+    else { fmt.eprintln(&quot;Device request:&quot;, status, message) }
+}
+
+device_lost :: proc &quot;c&quot; (device: ^wgpu.Device, reason: wgpu.DeviceLostReason,
+                        message: wgpu.StringView, userdata1, userdata2: rawptr) {
+    context = runtime.default_context()
+    if reason == .Destroyed { return }
+    fmt.eprintln(&quot;Device lost:&quot;, reason, message)
+    intrinsics.atomic_store(&amp;gpu_fault, true)
+}
+
+uncaptured_error :: proc &quot;c&quot; (device: ^wgpu.Device, error_type: wgpu.ErrorType,
+                             message: wgpu.StringView, userdata1, userdata2: rawptr) {
+    context = runtime.default_context()
+    fmt.eprintln(&quot;WebGPU error:&quot;, error_type, message)
+    intrinsics.atomic_store(&amp;gpu_fault, true)
+}
+
+gpu_request_device :: proc(gpu: ^GPU) -&gt; bool {
+    options := wgpu.RequestAdapterOptions{
+        compatibleSurface = gpu.platform.surface,
+        powerPreference = .HighPerformance,
+        featureLevel = .Core,
+    }
+    _ = wgpu.InstanceRequestAdapter(gpu.instance, &amp;options, {
+        mode = .AllowSpontaneos, callback = adapter_ready, userdata1 = gpu,
+    })
+    // Verified wgpu-native 29.0.1.1 behavior: these two request callbacks run inline.
+    // Do not carry this assumption to Dawn or to a later native implementation.
+    assert(gpu.adapter_done, &quot;Pinned wgpu-native request contract changed&quot;)
+    if gpu.adapter == nil { return false }
+    descriptor := wgpu.DeviceDescriptor{
+        label = &quot;2D device&quot;, defaultQueue = {label = &quot;2D queue&quot;},
+        deviceLostCallbackInfo = {mode = .AllowSpontaneos, callback = device_lost},
+        uncapturedErrorCallbackInfo = {callback = uncaptured_error},
+    }
+    _ = wgpu.AdapterRequestDevice(gpu.adapter, &amp;descriptor, {
+        mode = .AllowSpontaneos, callback = device_ready, userdata1 = gpu,
+    })
+    assert(gpu.device_done, &quot;Pinned wgpu-native request contract changed&quot;)
+    if gpu.device == nil { return false }
+    gpu.queue = wgpu.DeviceGetQueue(gpu.device)
+    return gpu.queue != nil &amp;&amp; !gpu_failed()
+}
+
+gpu_choose_surface :: proc(gpu: ^GPU) -&gt; bool {
+    caps, status := wgpu.SurfaceGetCapabilities(gpu.platform.surface, gpu.adapter)
+    if status != .Success {
+        fmt.eprintln(&quot;Surface capabilities unavailable:&quot;, status)
+        return false
+    }
+    defer wgpu.SurfaceCapabilitiesFreeMembers(caps)
+    format: wgpu.TextureFormat = .Undefined
+    for candidate in caps.formats[:caps.formatCount] {
+        if candidate == .BGRA8UnormSrgb || candidate == .RGBA8UnormSrgb {
+            format = candidate
+            break
+        }
+    }
+    if format == .Undefined || !(.RenderAttachment in caps.usages) {
+        fmt.eprintln(&quot;This example needs an sRGB RGBA/BGRA renderable surface&quot;)
+        return false
+    }
+    fifo := false
+    for mode in caps.presentModes[:caps.presentModeCount] {
+        if mode == .Fifo { fifo = true }
+    }
+    if !fifo { fmt.eprintln(&quot;Surface does not offer FIFO presentation&quot;); return false }
+    alpha: wgpu.CompositeAlphaMode = .Auto
+    for mode in caps.alphaModes[:caps.alphaModeCount] {
+        if mode == .Opaque { alpha = .Opaque }
+    }
+    limits, limit_status := wgpu.DeviceGetLimits(gpu.device)
+    if limit_status != .Success { return false }
+    gpu.max_texture_dimension = limits.maxTextureDimension2D
+    gpu.config = {
+        device = gpu.device, format = format, usage = {.RenderAttachment},
+        presentMode = .Fifo, alphaMode = alpha,
+    }
+    fmt.println(&quot;Surface format:&quot;, format)
+    return true
+}
+
+gpu_refresh_surface :: proc(gpu: ^GPU, window: ^sdl.Window) -&gt; bool {
+    if .MINIMIZED in sdl.GetWindowFlags(window) { return false }
+    width, height: c.int
+    if !sdl.GetWindowSizeInPixels(window, &amp;width, &amp;height) {
+        fmt.eprintln(&quot;Drawable size:&quot;, sdl.GetError())
+        intrinsics.atomic_store(&amp;gpu_fault, true)
+        return false
+    }
+    if width &lt;= 0 || height &lt;= 0 { return false }
+    if u32(width) &gt; gpu.max_texture_dimension || u32(height) &gt; gpu.max_texture_dimension {
+        return false
+    }
+    if gpu.dirty || !gpu.configured || gpu.config.width != u32(width) || gpu.config.height != u32(height) {
+        gpu.config.width = u32(width)
+        gpu.config.height = u32(height)
+        wgpu.SurfaceConfigure(gpu.platform.surface, &amp;gpu.config)
+        gpu.configured = !gpu_failed()
+        gpu.dirty = false
+    }
+    return gpu.configured
+}
+</code></pre></figure></details><details class="source-file"><summary>renderer/platform.odin <span>73 lines</span></summary><p><a download href="../checkpoints/23/renderer/platform.odin">Download this checkpoint’s renderer/platform.odin</a></p><figure class="code-block"><figcaption>checkpoints/23/renderer/platform.odin · complete file</figcaption><pre><code class="language-odin" data-source="checkpoints/23/renderer/platform.odin">package renderer
+import &quot;core:fmt&quot;
+import sdl &quot;vendor:sdl3&quot;
+import wgpu &quot;vendor:wgpu&quot;
+
+// SDL owns the window. We own this extra Metal view, when one exists.
+Platform_Surface :: struct {
+    surface: wgpu.Surface,
+    metal_view: sdl.MetalView, // nil on Windows and Linux
+}
+
+platform_surface_create :: proc(instance: wgpu.Instance, window: ^sdl.Window) -&gt; Platform_Surface {
+    result: Platform_Surface
+    when ODIN_OS == .Darwin {
+        result.metal_view = sdl.Metal_CreateView(window)
+        if result.metal_view == nil {
+            fmt.eprintln(&quot;Metal view:&quot;, sdl.GetError())
+            return result
+        }
+        layer := sdl.Metal_GetLayer(result.metal_view)
+        if layer == nil { return result }
+        source := wgpu.SurfaceSourceMetalLayer{
+            chain = {sType = .SurfaceSourceMetalLayer}, layer = layer,
+        }
+        descriptor := wgpu.SurfaceDescriptor{nextInChain = &amp;source.chain, label = &quot;SDL Metal surface&quot;}
+        result.surface = wgpu.InstanceCreateSurface(instance, &amp;descriptor)
+    } else when ODIN_OS == .Windows {
+        properties := sdl.GetWindowProperties(window)
+        hwnd := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_WIN32_HWND_POINTER, nil)
+        instance_handle := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_WIN32_INSTANCE_POINTER, nil)
+        if hwnd == nil || instance_handle == nil { return result }
+        source := wgpu.SurfaceSourceWindowsHWND{
+            chain = {sType = .SurfaceSourceWindowsHWND}, hwnd = hwnd, hinstance = instance_handle,
+        }
+        descriptor := wgpu.SurfaceDescriptor{nextInChain = &amp;source.chain, label = &quot;SDL Win32 surface&quot;}
+        result.surface = wgpu.InstanceCreateSurface(instance, &amp;descriptor)
+    } else when ODIN_OS == .Linux {
+        properties := sdl.GetWindowProperties(window)
+        switch sdl.GetCurrentVideoDriver() {
+        case &quot;wayland&quot;:
+            display := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_WAYLAND_DISPLAY_POINTER, nil)
+            surface := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_WAYLAND_SURFACE_POINTER, nil)
+            if display == nil || surface == nil { return result }
+            source := wgpu.SurfaceSourceWaylandSurface{
+                chain = {sType = .SurfaceSourceWaylandSurface}, display = display, surface = surface,
+            }
+            descriptor := wgpu.SurfaceDescriptor{nextInChain = &amp;source.chain, label = &quot;SDL Wayland surface&quot;}
+            result.surface = wgpu.InstanceCreateSurface(instance, &amp;descriptor)
+        case &quot;x11&quot;:
+            display := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_X11_DISPLAY_POINTER, nil)
+            window_id := sdl.GetNumberProperty(properties, sdl.PROP_WINDOW_X11_WINDOW_NUMBER, 0)
+            if display == nil || window_id == 0 { return result }
+            source := wgpu.SurfaceSourceXlibWindow{
+                chain = {sType = .SurfaceSourceXlibWindow}, display = display, window = u64(window_id),
+            }
+            descriptor := wgpu.SurfaceDescriptor{nextInChain = &amp;source.chain, label = &quot;SDL X11 surface&quot;}
+            result.surface = wgpu.InstanceCreateSurface(instance, &amp;descriptor)
+        case:
+            fmt.eprintln(&quot;Unsupported SDL video driver:&quot;, sdl.GetCurrentVideoDriver())
+        }
+    } else {
+        #panic(&quot;This book targets macOS, Windows, and Linux desktop windows&quot;)
+    }
+    return result
+}
+
+platform_surface_destroy :: proc(platform: ^Platform_Surface) {
+    if platform.surface != nil { wgpu.SurfaceRelease(platform.surface) }
+    when ODIN_OS == .Darwin {
+        if platform.metal_view != nil { sdl.Metal_DestroyView(platform.metal_view) }
+    }
+    platform^ = {}
+}
+</code></pre></figure></details><details class="source-file"><summary>game/animation.odin <span>41 lines</span></summary><p><a download href="../checkpoints/23/game/animation.odin">Download this checkpoint’s game/animation.odin</a></p><figure class="code-block"><figcaption>checkpoints/23/game/animation.odin · complete file</figcaption><pre><code class="language-odin" data-source="checkpoints/23/game/animation.odin">package game
+import &quot;core:math&quot;
+
+Facing :: enum { South, West, East, North }
+Animation :: struct { facing: Facing, phase: f32, moving: bool }
+FRAME_SECONDS :: f32(0.1)
+// Visual world units per source texel; independent of the collision footprint.
+PLAYER_TEXEL_SCALE :: f32(0.16)
+SHEET_SIZE :: [2]f32{1254, 1254}
+Sprite_Frame :: struct { min, size: [2]f32 }
+// Reviewed rectangles in source texels, including transparent padding.
+// The generated sheet is not perfectly registered, so draw each cropped frame
+// around its own bottom-center anchor at PLAYER_TEXEL_SCALE world units per texel.
+PLAYER_FRAMES := [4][4]Sprite_Frame{
+    {{{121, 29}, {134, 268}}, {{401, 29}, {138, 270}}, {{706, 29}, {137, 268}}, {{1002, 29}, {138, 269}}},
+    {{{116, 332}, {142, 274}}, {{401, 331}, {140, 273}}, {{705, 332}, {142, 274}}, {{998, 333}, {139, 272}}},
+    {{{112, 641}, {147, 276}}, {{400, 641}, {145, 272}}, {{705, 641}, {147, 277}}, {{1003, 639}, {145, 274}}},
+    {{{112, 945}, {145, 273}}, {{400, 946}, {142, 274}}, {{702, 946}, {145, 271}}, {{998, 944}, {142, 274}}},
+}
+
+Animate :: proc(animation: ^Animation, requested, displacement: [2]f32, dt: f32) {
+    assert(dt &gt;= 0)
+    facing := animation.facing
+    if requested.x != 0 || requested.y != 0 {
+        if math.abs(requested.x) &gt; math.abs(requested.y) {
+            facing = .East if requested.x &gt; 0 else .West
+        } else { facing = .South if requested.y &gt; 0 else .North }
+    }
+    if facing != animation.facing { animation.phase = 0 }
+    animation.facing = facing
+    animation.moving = displacement.x*displacement.x + displacement.y*displacement.y &gt; 0.000001
+    if animation.moving {
+        animation.phase = math.mod(animation.phase+dt, FRAME_SECONDS*4)
+    } else { animation.phase = 0 }
+}
+
+Current_Frame :: proc(animation: Animation) -&gt; Sprite_Frame {
+    column := 0
+    if animation.moving { column = min(int(animation.phase/FRAME_SECONDS), 3) }
+    return PLAYER_FRAMES[int(animation.facing)][column]
+}
+</code></pre></figure></details></section><nav class="chapter-navigation" aria-label="Chapter navigation"><a href="../chapters/22-finish-with-evidence.html"><span>← Previous Chapter</span><small>Finish with evidence</small></a><a href="../contents.html">Contents</a><a href="../appendix/final-source.html"><span>Next reference →</span><small>Complete final source</small></a></nav></article></main><footer class="page-footer"><span>Native Pixels · September 2026 edition</span><a href="../appendix/sources.html">Sources &amp; verification</a><a href="../LICENSE">MIT License</a><a href="#top">Back to top ↑</a></footer></div></body></html>

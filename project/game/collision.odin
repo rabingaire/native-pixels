@@ -1,0 +1,44 @@
+package game
+
+Box :: struct { min, size: [2]f32 }
+// Hand-authored against room.png at 1536x1024, displayed at 384x256.
+// This table is gameplay data, not inferred from the artwork or its alpha.
+SOLIDS := [?]Box{
+    {{0, 0}, {384, 48}},       // north wall
+    {{0, 240}, {384, 16}},     // south wall; doorway is decorative
+    {{0, 48}, {24, 192}},      // west wall
+    {{362, 48}, {22, 192}},    // east wall
+    {{26, 24}, {65, 118}},     // bed
+    {{90, 41}, {27, 34}},      // bedside table
+    {{300, 16}, {60, 65}},     // bookshelf
+    {{274, 90}, {84, 60}},     // work table
+    {{295, 134}, {31, 38}},    // chair
+    {{26, 160}, {54, 40}},     // chest
+    {{17, 196}, {33, 39}},     // plant
+}
+Feet :: proc(position: [2]f32) -> Box { return {position - [2]f32{4, 3}, {8, 4}} }
+Overlaps :: proc(a, b: Box) -> bool {
+    return a.min.x < b.min.x+b.size.x && a.min.x+a.size.x > b.min.x &&
+           a.min.y < b.min.y+b.size.y && a.min.y+a.size.y > b.min.y
+}
+
+// Axis-separated swept AABB: clip displacement at the first crossed solid edge.
+// Starting feet must be outside all solids. Obstacles are static, axis-aligned.
+Move :: proc(position: ^[2]f32, delta: [2]f32, solids: []Box) {
+    for axis in 0..<2 {
+        other := 1-axis
+        feet := Feet(position^)
+        allowed := delta[axis]
+        for solid in solids {
+            if feet.min[other] >= solid.min[other]+solid.size[other] ||
+               feet.min[other]+feet.size[other] <= solid.min[other] { continue }
+            near := feet.min[axis]
+            far := near+feet.size[axis]
+            solid_near := solid.min[axis]
+            solid_far := solid_near+solid.size[axis]
+            if allowed > 0 && far <= solid_near { allowed = min(allowed, solid_near-far) }
+            if allowed < 0 && near >= solid_far { allowed = max(allowed, solid_far-near) }
+        }
+        position[axis] += allowed
+    }
+}

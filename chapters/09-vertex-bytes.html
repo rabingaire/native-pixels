@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="description" content="A buffer is bytes. Its layout is the agreement that turns those bytes into positions and colors."><meta name="author" content="Rabin Gaire"><title>Vertex bytes become shader inputs — Native Pixels</title><link rel="canonical" href="https://rabingaire.com.np/native-pixels/chapters/09-vertex-bytes.html"><link rel="sitemap" type="application/xml" href="../sitemap.xml"><meta property="og:type" content="article"><meta property="og:site_name" content="Native Pixels"><meta property="og:locale" content="en_US"><meta property="og:title" content="Vertex bytes become shader inputs — Native Pixels"><meta property="og:description" content="A buffer is bytes. Its layout is the agreement that turns those bytes into positions and colors."><meta property="og:url" content="https://rabingaire.com.np/native-pixels/chapters/09-vertex-bytes.html"><meta property="og:image" content="https://rabingaire.com.np/native-pixels/assets/room-gameplay.png"><meta property="og:image:alt" content="Pixel-art room rendered with native WebGPU, Odin, and SDL3"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Vertex bytes become shader inputs — Native Pixels"><meta name="twitter:description" content="A buffer is bytes. Its layout is the agreement that turns those bytes into positions and colors."><meta name="twitter:image" content="https://rabingaire.com.np/native-pixels/assets/room-gameplay.png"><script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Book","@id":"https://rabingaire.com.np/native-pixels/#book","name":"Native Pixels","url":"https://rabingaire.com.np/native-pixels/","description":"Learn native 2D WebGPU with Odin and SDL3 in 23 chapters. Build a pixel-art game with sprite animation, collision, and complete runnable source.","inLanguage":"en","isAccessibleForFree":true,"author":{"@type":"Person","name":"Rabin Gaire"},"license":"https://rabingaire.com.np/native-pixels/LICENSE","image":"https://rabingaire.com.np/native-pixels/assets/room-gameplay.png"},{"@type":"Chapter","@id":"https://rabingaire.com.np/native-pixels/chapters/09-vertex-bytes.html","url":"https://rabingaire.com.np/native-pixels/chapters/09-vertex-bytes.html","name":"Vertex bytes become shader inputs","description":"A buffer is bytes. Its layout is the agreement that turns those bytes into positions and colors.","inLanguage":"en","isPartOf":{"@id":"https://rabingaire.com.np/native-pixels/#book"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Native Pixels","item":"https://rabingaire.com.np/native-pixels/"},{"@type":"ListItem","position":2,"name":"Vertex bytes become shader inputs","item":"https://rabingaire.com.np/native-pixels/chapters/09-vertex-bytes.html"}]}]}</script><script>try{const theme=localStorage.getItem("native-pixels-theme");if(theme==="light"||theme==="dark")document.documentElement.dataset.theme=theme;}catch{}</script><link rel="stylesheet" href="../assets/style.css"><script defer src="../assets/book.js"></script></head>
+<body id="top" class="reading-page"><a class="skip-link" href="#main">Skip to content</a><div class="reading-progress" aria-hidden="true"></div><aside class="book-rail"><a class="wordmark" href="../index.html"><span class="brand-mark" aria-hidden="true">▰</span><span>Native Pixels<span class="edition">ODIN / SDL3 / WEBGPU</span></span></a><nav class="rail-primary" aria-label="Book navigation"><a class="rail-link" href="../index.html"><span class="rail-label">Overview</span></a><a class="rail-link" href="../contents.html"><span class="rail-label">All chapters</span></a><a class="rail-link" href="../appendix/build.html"><span class="rail-label">Build the game</span></a></nav><div class="rail-context"><p class="rail-kicker">Chapter 9</p><a class="rail-title" href="#top">Vertex bytes become shader inputs</a><nav class="rail-sections" aria-label="Chapter sections"><a class="rail-link numbered" href="#section-1"><span class="rail-index">9.1</span><span class="rail-label">Calculate an address before trusting the image</span></a><a class="rail-link numbered" href="#section-2"><span class="rail-index">9.2</span><span class="rail-label">Move geometry out of the shader</span></a><a class="rail-link numbered" href="#section-3"><span class="rail-index">9.3</span><span class="rail-label">Follow one record through all three interfaces</span></a><a class="rail-link numbered" href="#section-4"><span class="rail-index">9.4</span><span class="rail-label">Allocate once, upload once</span></a><a class="rail-link numbered" href="#section-5"><span class="rail-index">9.5</span><span class="rail-label">Interpolate values across the triangle</span></a><a class="rail-link numbered" href="#section-6"><span class="rail-index">9.6</span><span class="rail-label">When this work happens</span></a><a class="rail-link numbered" href="#section-7"><span class="rail-index">9.7</span><span class="rail-label">Read the symptom, test a hypothesis</span></a><a class="rail-link numbered" href="#section-8"><span class="rail-index">9.8</span><span class="rail-label">Experiments</span></a><a class="rail-link numbered" href="#section-9"><span class="rail-index">9.9</span><span class="rail-label">What we have now</span></a><a class="rail-link numbered" href="#section-10"><span class="rail-index">9.10</span><span class="rail-label">Challenges</span></a><a class="rail-link numbered" href="#section-11"><span class="rail-index">9.11</span><span class="rail-label">Exact code changes and runnable checkpoint</span></a></nav><div class="rail-prev-next"><a href="../chapters/08-the-first-triangle.html">← Previous</a><a href="../chapters/10-four-corners-six-indices.html">Next →</a></div></div><div class="rail-reference"><p class="rail-kicker">Keep nearby</p><nav aria-label="Reference pages"><a class="rail-link" href="../appendix/final-source.html"><span class="rail-label">Complete final source</span></a><a class="rail-link" href="../appendix/glossary.html"><span class="rail-label">Glossary</span></a><a class="rail-link" href="../appendix/cheat-sheets.html"><span class="rail-label">Initialization, frame, and lifetime sheets</span></a><a class="rail-link" href="../appendix/sources.html"><span class="rail-label">Sources and verification record</span></a></nav></div></aside><div class="page-shell"><header class="topbar"><div class="breadcrumb"><a href="../index.html">Native Pixels</a><span aria-hidden="true">/</span><span>Chapter 9</span></div><div class="reader-controls"><button type="button" class="theme-toggle" hidden aria-label="Change color theme">Theme</button><button type="button" class="focus-toggle" hidden aria-pressed="false">Focus</button><a class="mobile-contents" href="../contents.html">Contents</a></div></header><main id="main" tabindex="-1"><article class="chapter"><header class="chapter-header"><span class="chapter-display-number" aria-hidden="true">9</span><p class="eyebrow">III · Build a small 2D renderer <span>Chapter 09 / 23</span></p><h1>Vertex bytes become shader inputs</h1><p class="deck">A buffer is bytes. Its layout is the agreement that turns those bytes into positions and colors.</p><p class="reading-meta">7 min read + implementation · checkpoint 09</p></header><aside class="callout outcome"><strong>At the end of this chapter</strong><p>The triangle reads an Odin-created vertex buffer and interpolates three corner colors.</p></aside><nav class="on-this-page" aria-label="On this page"><details><summary>In this chapter</summary><ol><li><a href="#section-1"><span>9.1</span> Calculate an address before trusting the image</a></li><li><a href="#section-2"><span>9.2</span> Move geometry out of the shader</a></li><li><a href="#section-3"><span>9.3</span> Follow one record through all three interfaces</a></li><li><a href="#section-4"><span>9.4</span> Allocate once, upload once</a></li><li><a href="#section-5"><span>9.5</span> Interpolate values across the triangle</a></li><li><a href="#section-6"><span>9.6</span> When this work happens</a></li><li><a href="#section-7"><span>9.7</span> Read the symptom, test a hypothesis</a></li><li><a href="#section-8"><span>9.8</span> Experiments</a></li><li><a href="#section-9"><span>9.9</span> What we have now</a></li><li><a href="#section-10"><span>9.10</span> Challenges</a></li><li><a href="#section-11"><span>9.11</span> Exact code changes and runnable checkpoint</a></li></ol></details></nav><section class="learning-guide"><h2 id="section-1"><span class="section-number" aria-hidden="true">9.1</span>Calculate an address before trusting the image<a class="heading-link" href="#section-1" aria-label="Link to Calculate an address before trusting the image">#</a></h2><p>An ABI, or application binary interface, is an agreement about how data is represented across a boundary. Here Odin lays out bytes, WebGPU describes how vertex fetch reads them, and WGSL declares the receiving values. Matching field names is not enough; byte offsets, formats, and shader locations must agree.</p><p>Each vertex occupies 24 bytes. Vertex number 1 starts 24 bytes after the buffer’s beginning, and its color starts another 8 bytes later: byte 32. Float32x4 asks vertex fetch to decode four 32-bit floating-point values there. A stride of 16 would instead start the next vertex inside the preceding color.</p><p>A buffer slot chooses a stream of records. A shader location chooses an input within a particular stage interface. We bind one buffer in slot zero, but read two attributes at locations zero and one. Remembering those separate jobs prevents a large class of apparently mysterious shader errors.</p></section><section><h2 id="section-2"><span class="section-number" aria-hidden="true">9.2</span>Move geometry out of the shader<a class="heading-link" href="#section-2" aria-label="Link to Move geometry out of the shader">#</a></h2><p>The hard-coded array proved the shader pipeline. It becomes awkward as soon as geometry belongs to the application rather than to shader source. A GPU buffer gives us a persistent region of bytes usable by GPU operations. The CPU owns a native handle, while the implementation chooses suitable backing storage. We cannot assume that storage is simply a CPU array, even on a machine with unified memory.</p><p>Add the <code>Vertex</code> struct and three-element <code>VERTICES</code> constant to <code>renderer.odin</code>. The constant is CPU-side data compiled into the program. The WebGPU buffer created from it is a separate object. Change the WGSL vertex entry point to read attributes rather than <code>vertex_index</code>. This deliberately removes the temporary shader array introduced in chapter 8.</p><figure class="code-block"><figcaption>src/renderer.odin · add vertex ABI, assertions, and initial data</figcaption><pre><code class="language-odin">Vertex :: struct {
+    position: [2]f32,
+    color: [4]f32,
+}
+#assert(size_of(Vertex) == 24)
+#assert(offset_of(Vertex, position) == 0)
+#assert(offset_of(Vertex, color) == 8)
+
+VERTICES :: [3]Vertex{
+    {{-0.6, -0.5}, {1, 0.1, 0.1, 1}},
+    {{ 0.6, -0.5}, {0.1, 1, 0.1, 1}},
+    {{ 0.0,  0.6}, {0.1, 0.1, 1, 1}},
+}</code></pre></figure><figure class="diagram"><svg viewBox="0 0 760 175" role="img" aria-label="24 byte vertex: x at byte 0, y at byte 4, RGBA at bytes 8 12 16 20"><title>Vertex memory layout</title><rect x="25" y="42" width="116" height="54"/><text x="83" y="75" text-anchor="middle">x: f32</text><text x="25" y="28">0</text><rect x="141" y="42" width="116" height="54"/><text x="199" y="75" text-anchor="middle">y: f32</text><text x="141" y="28">4</text><rect x="257" y="42" width="116" height="54"/><text x="315" y="75" text-anchor="middle">r: f32</text><text x="257" y="28">8</text><rect x="373" y="42" width="116" height="54"/><text x="431" y="75" text-anchor="middle">g: f32</text><text x="373" y="28">12</text><rect x="489" y="42" width="116" height="54"/><text x="547" y="75" text-anchor="middle">b: f32</text><text x="489" y="28">16</text><rect x="605" y="42" width="116" height="54"/><text x="663" y="75" text-anchor="middle">a: f32</text><text x="605" y="28">20</text><path d="M25 117v12h696v-12"/><text x="373" y="157" text-anchor="middle">stride = 24 bytes → next vertex</text></svg><figcaption>Location 0 reads Float32x2 at offset 0. Location 1 reads Float32x4 at offset 8.</figcaption></figure></section><section><h2 id="section-3"><span class="section-number" aria-hidden="true">9.3</span>Follow one record through all three interfaces<a class="heading-link" href="#section-3" aria-label="Link to Follow one record through all three interfaces">#</a></h2><div class="table-scroll"><table><thead><tr><th scope="col">Odin memory</th><th scope="col">WebGPU attribute</th><th scope="col">WGSL input</th></tr></thead><tbody><tr><td>Bytes 0–7: two f32 position values</td><td>Offset 0, Float32x2, location 0</td><td><code>@location(0) position: vec2f</code></td></tr><tr><td>Bytes 8–23: four f32 color values</td><td>Offset 8, Float32x4, location 1</td><td><code>@location(1) color: vec4f</code></td></tr><tr><td>Next record begins 24 bytes later</td><td>arrayStride = 24, stepMode = Vertex</td><td>A new record for the next vertex index</td></tr></tbody></table></div><p>The stride is the distance in bytes from the beginning of one vertex record to the beginning of the next. An attribute’s offset is measured from the beginning of its record. The GPU effectively reads <code>buffer_base + vertex_number × stride + attribute_offset</code>, then interprets those bytes according to the format. The shader location identifies the destination parameter; the parameter’s name is not part of this matching process.</p><p>Our struct contains arrays of scalar f32 values. Its position begins at byte zero and its color at byte eight, with size 24. Compile-time assertions make that ABI explicit. Vertex attributes do not inherit WGSL uniform-buffer layout rules: a Float32x4 vertex attribute at byte eight is valid even though a vec4f in a uniform struct requires 16-byte alignment. Confusing vertex-fetch layout with shader memory layout is a frequent source of unnecessary padding and incorrect strides.</p><figure class="code-block"><figcaption>src/renderer.odin · renderer_init · add vertex fetch layout</figcaption><pre><code class="language-odin">attributes := [2]wgpu.VertexAttribute{
+        {format = .Float32x2, offset = u64(offset_of(Vertex, position)), shaderLocation = 0},
+        {format = .Float32x4, offset = u64(offset_of(Vertex, color)), shaderLocation = 1},
+    }
+    vertex_layout := wgpu.VertexBufferLayout{
+        arrayStride = size_of(Vertex), stepMode = .Vertex,
+        attributeCount = len(attributes), attributes = raw_data(attributes[:]),
+    }</code></pre></figure><p><code>attributeCount</code> and <code>attributes</code> describe the array of two attributes. <code>bufferCount = 1</code> and <code>buffers = &vertex_layout</code> are added to the pipeline’s vertex stage. Buffer slot zero describes one stream of interleaved position/color records. It is independent of shader locations zero and one. Multiple attributes can come from the same buffer slot, as they do here.</p></section><section><h2 id="section-4"><span class="section-number" aria-hidden="true">9.4</span>Allocate once, upload once<a class="heading-link" href="#section-4" aria-label="Link to Allocate once, upload once">#</a></h2><figure class="code-block"><figcaption>src/renderer.odin · renderer_init · allocate and upload vertex data</figcaption><pre><code class="language-odin">renderer.vertex_buffer = wgpu.DeviceCreateBuffer(gpu.device, &amp;wgpu.BufferDescriptor{
+        label = &quot;character vertices&quot;, size = size_of(VERTICES), usage = {.Vertex, .CopyDst},
+    })
+    if renderer.vertex_buffer == nil { return false }
+    vertices := VERTICES
+    wgpu.QueueWriteBuffer(gpu.queue, renderer.vertex_buffer, 0, &amp;vertices, size_of(vertices))</code></pre></figure><p><code>.Vertex</code> allows vertex fetch from the buffer. <code>.CopyDst</code> allows writes through the queue. Flags are capabilities of the resource, not the operation we happen to perform first. Leaving out CopyDst is a validation error when uploading, even if the buffer size is correct. Buffer allocation by itself does not copy our constant into GPU storage.</p><p><code>QueueWriteBuffer</code> copies the supplied CPU bytes into implementation-managed upload storage as part of the call, with the GPU-visible write ordered through the queue. The local <code>vertices</code> copy exists to supply an addressable range for that call; it can go out of scope afterward. We do not map the vertex buffer, block for GPU completion, or retain a pointer to the local array. The data size is 72 bytes, a multiple of four, satisfying the write operation’s alignment requirement.</p><p>Add a vertex-buffer handle to <code>Renderer</code> and release it in <code>renderer_destroy</code>. Inside <code>renderer_frame</code>, bind slot zero immediately after selecting the pipeline and before drawing:</p><figure class="code-block"><pre><code class="language-odin">wgpu.RenderPassEncoderSetVertexBuffer(pass, 0, renderer.vertex_buffer, 0, size_of(VERTICES))</code></pre></figure><p>The byte offset is zero and the bound range is the whole vertex array. This establishes which actual buffer supplies the slot whose layout the pipeline already describes. Layout and binding solve different questions: “how are records interpreted?” versus “which storage contains them?”</p></section><section><h2 id="section-5"><span class="section-number" aria-hidden="true">9.5</span>Interpolate values across the triangle<a class="heading-link" href="#section-5" aria-label="Link to Interpolate values across the triangle">#</a></h2><figure class="code-block"><figcaption>shaders/character.wgsl · complete file</figcaption><pre><code class="language-wgsl">struct Vertex_Out {
+    @builtin(position) clip_position: vec4f,
+    @location(0) color: vec4f,
+}
+
+@vertex
+fn vs_main(@location(0) position: vec2f, @location(1) color: vec4f) -&gt; Vertex_Out {
+    var out: Vertex_Out;
+    out.clip_position = vec4f(position, 0.0, 1.0);
+    out.color = color;
+    return out;
+}
+
+@fragment
+fn fs_main(in: Vertex_Out) -&gt; @location(0) vec4f {
+    return in.color;
+}</code></pre></figure><p>The vertex shader returns a struct with a built-in clip position and a user color at location zero. The fragment shader receives the interpolated color at that location. Do not confuse its location zero with the vertex input color at location one: these are different stage interfaces. Locations connect outputs to inputs at a particular stage boundary, not a single global namespace.</p><p>The rasterizer interpolates the three vertex colors across the covered triangle. WGSL’s default interpolation is perspective-correct for floating-point user values; all our w values are one, so this reduces to the affine interpolation you expect in 2D. A green region inside the triangle is not another uploaded vertex. It is a color computed from nearby vertex contributions.</p></section><section><h2 id="section-6"><span class="section-number" aria-hidden="true">9.6</span>When this work happens<a class="heading-link" href="#section-6" aria-label="Link to When this work happens">#</a></h2><div class="table-scroll"><table><thead><tr><th scope="col">Operation</th><th scope="col">Frequency</th><th scope="col">Reason</th></tr></thead><tbody><tr><td>Create vertex buffer and upload constant geometry</td><td>Once</td><td>Geometry remains unchanged across frames</td></tr><tr><td>Describe layout</td><td>Pipeline creation</td><td>Fix the byte interpretation</td></tr><tr><td>Bind vertex buffer</td><td>Every draw setup</td><td>Supply the pipeline’s vertex slot</td></tr><tr><td>Interpolate color</td><td>GPU rasterization</td><td>Generate smooth values across coverage</td></tr></tbody></table></div></section><section><h2 id="section-7"><span class="section-number" aria-hidden="true">9.7</span>Read the symptom, test a hypothesis<a class="heading-link" href="#section-7" aria-label="Link to Read the symptom, test a hypothesis">#</a></h2><div class="table-scroll"><table><thead><tr><th scope="col">Symptom</th><th scope="col">What to inspect</th><th scope="col">Why it matters</th></tr></thead><tbody><tr><td>Exploding or stretched geometry</td><td>Stride, offsets, bound range, position format</td><td>The GPU may be reading color bytes as a position</td></tr><tr><td>Flat unexpected color</td><td>Stage locations and color input format</td><td>Correct bytes can still be routed to the wrong shader input</td></tr><tr><td>WriteBuffer validation error</td><td>CopyDst, size, and four-byte alignment</td><td>The upload has requirements independent of vertex fetch</td></tr></tbody></table></div></section><section><h2 id="section-8"><span class="section-number" aria-hidden="true">9.8</span>Experiments<a class="heading-link" href="#section-8" aria-label="Link to Experiments">#</a></h2><p>These short, optional checks help you test the explanation. Predict the result first, then run the program. Restore the chapter’s baseline before continuing; later chapters assume the supplied checkpoint.</p><ol><li>Give all three vertices the same color. The interpolator is still active, but interpolation between equal values is constant.</li><li>Deliberately change the stride to 16 and inspect the first validation error or broken image. Restore 24 and explain the address of the second position in each case.</li></ol></section><section><h2 id="section-9"><span class="section-number" aria-hidden="true">9.9</span>What we have now<a class="heading-link" href="#section-9" aria-label="Link to What we have now">#</a></h2><p>The triangle reads an Odin-created vertex buffer and interpolates three corner colors.</p><p>Before moving on, run this checkpoint and compare it with the stated result. If it differs, use the symptom table above or the complete files below to locate the missing step.</p><p>Run <code>odin run checkpoints/09/src</code> from the book root, with the SDL linker flags for your platform. <a href="../appendix/build.html">Dependency and build instructions →</a></p></section><section class="challenges"><h2 id="section-10"><span class="section-number" aria-hidden="true">9.10</span>Challenges<a class="heading-link" href="#section-10" aria-label="Link to Challenges">#</a></h2><p class="challenge-intro">Optional extensions. The complete game in chapter 23 requires none of these. Work in a separate copy if you want to explore; the next chapter starts from this chapter’s supplied baseline.</p><ol><li><h3>A second mesh</h3><p>Put two independently shaped triangles into one six-vertex buffer, with a different color scheme for each. Update the upload size, bound range, and draw count together.</p><p class="challenge-check"><strong>Check your result:</strong> Both triangles render without changing the 24-byte vertex contract.</p></li><li><h3>An animated color field</h3><p>Keep positions fixed and update vertex colors from a CPU-side clock. Add CopyDst only if it is missing, and reuse the buffer allocation.</p><p class="challenge-check"><strong>Check your result:</strong> Colors animate without rebuilding the pipeline or changing triangle positions.</p></li></ol></section><section><h2 id="section-11"><span class="section-number" aria-hidden="true">9.11</span>Exact code changes and runnable checkpoint<a class="heading-link" href="#section-11" aria-label="Link to Exact code changes and runnable checkpoint">#</a></h2><div class="table-scroll"><table><thead><tr><th scope="col">File</th><th scope="col">Operation</th></tr></thead><tbody><tr><td><code>src/renderer.odin</code></td><td>Replace the changed portions shown below; preserve all other code</td></tr><tr><td><code>shaders/character.wgsl</code></td><td>Replace the changed portions shown below; preserve all other code</td></tr></tbody></table></div><details class="change-record"><summary>Exact patch from the preceding checkpoint</summary><p><a download href="../checkpoints/09/changes.patch">Download changes.patch</a> · inspect or apply with <code>patch -p1</code> from your own project directory at the previous checkpoint.</p><figure class="code-block"><pre><code class="language-diff">--- before/src/renderer.odin
++++ after/src/renderer.odin
+@@ -38,6 +38,7 @@
+     if pass == nil { return false }
+     defer wgpu.RenderPassEncoderRelease(pass)
+     wgpu.RenderPassEncoderSetPipeline(pass, renderer.pipeline)
++    wgpu.RenderPassEncoderSetVertexBuffer(pass, 0, renderer.vertex_buffer, 0, size_of(VERTICES))
+     wgpu.RenderPassEncoderDraw(pass, 3, 1, 0, 0)
+     wgpu.RenderPassEncoderEnd(pass)
+     commands := wgpu.CommandEncoderFinish(encoder, &amp;wgpu.CommandBufferDescriptor{label = &quot;finished frame&quot;})
+@@ -52,11 +53,32 @@
+     return !gpu_failed()
+ }
+ 
++Vertex :: struct {
++    position: [2]f32,
++    color: [4]f32,
++}
++#assert(size_of(Vertex) == 24)
++#assert(offset_of(Vertex, position) == 0)
++#assert(offset_of(Vertex, color) == 8)
++
++VERTICES :: [3]Vertex{
++    {{-0.6, -0.5}, {1, 0.1, 0.1, 1}},
++    {{ 0.6, -0.5}, {0.1, 1, 0.1, 1}},
++    {{ 0.0,  0.6}, {0.1, 0.1, 1, 1}},
++}
++
+ Renderer :: struct {
+     pipeline: wgpu.RenderPipeline,
++    vertex_buffer: wgpu.Buffer,
+ }
+ 
+ renderer_init :: proc(renderer: ^Renderer, gpu: ^GPU) -&gt; bool {
++    renderer.vertex_buffer = wgpu.DeviceCreateBuffer(gpu.device, &amp;wgpu.BufferDescriptor{
++        label = &quot;character vertices&quot;, size = size_of(VERTICES), usage = {.Vertex, .CopyDst},
++    })
++    if renderer.vertex_buffer == nil { return false }
++    vertices := VERTICES
++    wgpu.QueueWriteBuffer(gpu.queue, renderer.vertex_buffer, 0, &amp;vertices, size_of(vertices))
+     source := wgpu.ShaderSourceWGSL{
+         chain = {sType = .ShaderSourceWGSL}, code = #load(&quot;../shaders/character.wgsl&quot;, string),
+     }
+@@ -73,9 +95,17 @@
+     defer wgpu.PipelineLayoutRelease(layout)
+     target := wgpu.ColorTargetState{format = gpu.config.format, writeMask = {.Red, .Green, .Blue, .Alpha}}
+     fragment := wgpu.FragmentState{module = shader, entryPoint = &quot;fs_main&quot;, targetCount = 1, targets = &amp;target}
++    attributes := [2]wgpu.VertexAttribute{
++        {format = .Float32x2, offset = u64(offset_of(Vertex, position)), shaderLocation = 0},
++        {format = .Float32x4, offset = u64(offset_of(Vertex, color)), shaderLocation = 1},
++    }
++    vertex_layout := wgpu.VertexBufferLayout{
++        arrayStride = size_of(Vertex), stepMode = .Vertex,
++        attributeCount = len(attributes), attributes = raw_data(attributes[:]),
++    }
+     descriptor := wgpu.RenderPipelineDescriptor{
+         label = &quot;character pipeline&quot;, layout = layout,
+-        vertex = {module = shader, entryPoint = &quot;vs_main&quot;},
++        vertex = {module = shader, entryPoint = &quot;vs_main&quot;, bufferCount = 1, buffers = &amp;vertex_layout},
+         fragment = &amp;fragment,
+         primitive = {topology = .TriangleList, frontFace = .CCW, cullMode = .None},
+         multisample = {count = 1, mask = 0xffffffff},
+@@ -85,6 +115,7 @@
+ }
+ 
+ renderer_destroy :: proc(renderer: ^Renderer) {
++    if renderer.vertex_buffer != nil { wgpu.BufferRelease(renderer.vertex_buffer) }
+     if renderer.pipeline != nil { wgpu.RenderPipelineRelease(renderer.pipeline) }
+     renderer^ = {}
+ }
+--- before/shaders/character.wgsl
++++ after/shaders/character.wgsl
+@@ -1,12 +1,17 @@
++struct Vertex_Out {
++    @builtin(position) clip_position: vec4f,
++    @location(0) color: vec4f,
++}
++
+ @vertex
+-fn vs_main(@builtin(vertex_index) index: u32) -&gt; @builtin(position) vec4f {
+-    let positions = array&lt;vec2f, 3&gt;(
+-        vec2f(-0.6, -0.5), vec2f(0.6, -0.5), vec2f(0.0, 0.6)
+-    );
+-    return vec4f(positions[index], 0.0, 1.0);
++fn vs_main(@location(0) position: vec2f, @location(1) color: vec4f) -&gt; Vertex_Out {
++    var out: Vertex_Out;
++    out.clip_position = vec4f(position, 0.0, 1.0);
++    out.color = color;
++    return out;
+ }
+ 
+ @fragment
+-fn fs_main() -&gt; @location(0) vec4f {
+-    return vec4f(0.12, 0.78, 0.55, 1.0);
++fn fs_main(in: Vertex_Out) -&gt; @location(0) vec4f {
++    return in.color;
+ }</code></pre></figure></details><p>Complete end-of-chapter files follow. These are already present in <code>checkpoints/09/</code>; no assembly from excerpts is required.</p><details class="source-file"><summary>src/main.odin <span>47 lines</span></summary><p><a download href="../checkpoints/09/src/main.odin">Download this checkpoint’s src/main.odin</a></p><figure class="code-block"><figcaption>checkpoints/09/src/main.odin · complete file</figcaption><pre><code class="language-odin" data-source="checkpoints/09/src/main.odin">package character
+import &quot;core:fmt&quot;
+import sdl &quot;vendor:sdl3&quot;
+import wgpu &quot;vendor:wgpu&quot;
+
+main :: proc() {
+    if !sdl.Init({.VIDEO}) {
+        fmt.eprintln(&quot;SDL initialization:&quot;, sdl.GetError())
+        return
+    }
+    defer sdl.Quit()
+    flags: sdl.WindowFlags = {}
+    when ODIN_OS == .Darwin { flags += {.METAL} }
+    window := sdl.CreateWindow(&quot;Native Pixels&quot;, 960, 640, flags)
+    if window == nil {
+        fmt.eprintln(&quot;Window creation:&quot;, sdl.GetError())
+        return
+    }
+    defer sdl.DestroyWindow(window)
+    if !sdl.ShowWindow(window) {
+        fmt.eprintln(&quot;Show window:&quot;, sdl.GetError())
+        return
+    }
+    if !sdl.RaiseWindow(window) { fmt.eprintln(&quot;Window focus request:&quot;, sdl.GetError()) }
+
+    gpu: GPU
+    defer gpu_destroy(&amp;gpu)
+    if !gpu_init(&amp;gpu, window) { return }
+
+    renderer: Renderer
+    defer renderer_destroy(&amp;renderer)
+    if !renderer_init(&amp;renderer, &amp;gpu) { return }
+
+    running := true
+    for running {
+        event: sdl.Event
+        for sdl.PollEvent(&amp;event) {
+            #partial switch event.type {
+            case .QUIT, .WINDOW_CLOSE_REQUESTED: running = false
+            }
+        }
+        if !running { break }
+        wgpu.InstanceProcessEvents(gpu.instance)
+        if gpu_failed() { break }
+        if !renderer_frame(&amp;gpu, window, &amp;renderer) { break }
+    }
+}
+</code></pre></figure></details><details class="source-file"><summary>src/platform.odin <span>73 lines</span></summary><p><a download href="../checkpoints/09/src/platform.odin">Download this checkpoint’s src/platform.odin</a></p><figure class="code-block"><figcaption>checkpoints/09/src/platform.odin · complete file</figcaption><pre><code class="language-odin" data-source="checkpoints/09/src/platform.odin">package character
+import &quot;core:fmt&quot;
+import sdl &quot;vendor:sdl3&quot;
+import wgpu &quot;vendor:wgpu&quot;
+
+// SDL owns the window. We own this extra Metal view, when one exists.
+Platform_Surface :: struct {
+    surface: wgpu.Surface,
+    metal_view: sdl.MetalView, // nil on Windows and Linux
+}
+
+platform_surface_create :: proc(instance: wgpu.Instance, window: ^sdl.Window) -&gt; Platform_Surface {
+    result: Platform_Surface
+    when ODIN_OS == .Darwin {
+        result.metal_view = sdl.Metal_CreateView(window)
+        if result.metal_view == nil {
+            fmt.eprintln(&quot;Metal view:&quot;, sdl.GetError())
+            return result
+        }
+        layer := sdl.Metal_GetLayer(result.metal_view)
+        if layer == nil { return result }
+        source := wgpu.SurfaceSourceMetalLayer{
+            chain = {sType = .SurfaceSourceMetalLayer}, layer = layer,
+        }
+        descriptor := wgpu.SurfaceDescriptor{nextInChain = &amp;source.chain, label = &quot;SDL Metal surface&quot;}
+        result.surface = wgpu.InstanceCreateSurface(instance, &amp;descriptor)
+    } else when ODIN_OS == .Windows {
+        properties := sdl.GetWindowProperties(window)
+        hwnd := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_WIN32_HWND_POINTER, nil)
+        instance_handle := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_WIN32_INSTANCE_POINTER, nil)
+        if hwnd == nil || instance_handle == nil { return result }
+        source := wgpu.SurfaceSourceWindowsHWND{
+            chain = {sType = .SurfaceSourceWindowsHWND}, hwnd = hwnd, hinstance = instance_handle,
+        }
+        descriptor := wgpu.SurfaceDescriptor{nextInChain = &amp;source.chain, label = &quot;SDL Win32 surface&quot;}
+        result.surface = wgpu.InstanceCreateSurface(instance, &amp;descriptor)
+    } else when ODIN_OS == .Linux {
+        properties := sdl.GetWindowProperties(window)
+        switch sdl.GetCurrentVideoDriver() {
+        case &quot;wayland&quot;:
+            display := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_WAYLAND_DISPLAY_POINTER, nil)
+            surface := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_WAYLAND_SURFACE_POINTER, nil)
+            if display == nil || surface == nil { return result }
+            source := wgpu.SurfaceSourceWaylandSurface{
+                chain = {sType = .SurfaceSourceWaylandSurface}, display = display, surface = surface,
+            }
+            descriptor := wgpu.SurfaceDescriptor{nextInChain = &amp;source.chain, label = &quot;SDL Wayland surface&quot;}
+            result.surface = wgpu.InstanceCreateSurface(instance, &amp;descriptor)
+        case &quot;x11&quot;:
+            display := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_X11_DISPLAY_POINTER, nil)
+            window_id := sdl.GetNumberProperty(properties, sdl.PROP_WINDOW_X11_WINDOW_NUMBER, 0)
+            if display == nil || window_id == 0 { return result }
+            source := wgpu.SurfaceSourceXlibWindow{
+                chain = {sType = .SurfaceSourceXlibWindow}, display = display, window = u64(window_id),
+            }
+            descriptor := wgpu.SurfaceDescriptor{nextInChain = &amp;source.chain, label = &quot;SDL X11 surface&quot;}
+            result.surface = wgpu.InstanceCreateSurface(instance, &amp;descriptor)
+        case:
+            fmt.eprintln(&quot;Unsupported SDL video driver:&quot;, sdl.GetCurrentVideoDriver())
+        }
+    } else {
+        #panic(&quot;This book targets macOS, Windows, and Linux desktop windows&quot;)
+    }
+    return result
+}
+
+platform_surface_destroy :: proc(platform: ^Platform_Surface) {
+    if platform.surface != nil { wgpu.SurfaceRelease(platform.surface) }
+    when ODIN_OS == .Darwin {
+        if platform.metal_view != nil { sdl.Metal_DestroyView(platform.metal_view) }
+    }
+    platform^ = {}
+}
+</code></pre></figure></details><details class="source-file"><summary>src/gpu.odin <span>172 lines</span></summary><p><a download href="../checkpoints/09/src/gpu.odin">Download this checkpoint’s src/gpu.odin</a></p><figure class="code-block"><figcaption>checkpoints/09/src/gpu.odin · complete file</figcaption><pre><code class="language-odin" data-source="checkpoints/09/src/gpu.odin">package character
+import &quot;core:fmt&quot;
+import &quot;core:c&quot;
+import &quot;base:runtime&quot;
+import &quot;base:intrinsics&quot;
+import sdl &quot;vendor:sdl3&quot;
+import wgpu &quot;vendor:wgpu&quot;
+
+GPU :: struct {
+    instance: wgpu.Instance,
+    platform: Platform_Surface,
+    adapter: wgpu.Adapter,
+    device: wgpu.Device,
+    queue: wgpu.Queue,
+    adapter_done, device_done: bool,
+    config: wgpu.SurfaceConfiguration,
+    configured, dirty: bool,
+    max_texture_dimension: u32,
+}
+
+gpu_init :: proc(gpu: ^GPU, window: ^sdl.Window) -&gt; bool {
+    gpu.instance = wgpu.CreateInstance(nil)
+    if gpu.instance == nil {
+        fmt.eprintln(&quot;Cannot create a WebGPU instance&quot;)
+        return false
+    }
+    gpu.platform = platform_surface_create(gpu.instance, window)
+    if gpu.platform.surface == nil {
+        fmt.eprintln(&quot;Cannot connect WebGPU to the SDL window&quot;)
+        return false
+    }
+    if !gpu_request_device(gpu) { return false }
+    if !gpu_choose_surface(gpu) { return false }
+    gpu.dirty = true
+    _ = gpu_refresh_surface(gpu, window)
+    return !gpu_failed()
+}
+
+gpu_destroy :: proc(gpu: ^GPU) {
+    if gpu.device != nil { _ = wgpu.DevicePoll(gpu.device, true, nil) }
+    if gpu.configured { wgpu.SurfaceUnconfigure(gpu.platform.surface) }
+    if gpu.queue != nil { wgpu.QueueRelease(gpu.queue) }
+    if gpu.device != nil { wgpu.DeviceRelease(gpu.device) }
+    if gpu.adapter != nil { wgpu.AdapterRelease(gpu.adapter) }
+    platform_surface_destroy(&amp;gpu.platform)
+    if gpu.instance != nil { wgpu.InstanceRelease(gpu.instance) }
+    gpu^ = {}
+}
+
+// Process-lifetime storage: native diagnostic callbacks may arrive on other threads.
+gpu_fault: bool
+
+gpu_failed :: proc() -&gt; bool { return intrinsics.atomic_load(&amp;gpu_fault) }
+
+adapter_ready :: proc &quot;c&quot; (status: wgpu.RequestAdapterStatus, adapter: wgpu.Adapter,
+                          message: wgpu.StringView, userdata1, userdata2: rawptr) {
+    context = runtime.default_context()
+    gpu := cast(^GPU)userdata1
+    gpu.adapter_done = true
+    if status == .Success { gpu.adapter = adapter }
+    else { fmt.eprintln(&quot;Adapter request:&quot;, status, message) }
+}
+
+device_ready :: proc &quot;c&quot; (status: wgpu.RequestDeviceStatus, device: wgpu.Device,
+                         message: wgpu.StringView, userdata1, userdata2: rawptr) {
+    context = runtime.default_context()
+    gpu := cast(^GPU)userdata1
+    gpu.device_done = true
+    if status == .Success { gpu.device = device }
+    else { fmt.eprintln(&quot;Device request:&quot;, status, message) }
+}
+
+device_lost :: proc &quot;c&quot; (device: ^wgpu.Device, reason: wgpu.DeviceLostReason,
+                        message: wgpu.StringView, userdata1, userdata2: rawptr) {
+    context = runtime.default_context()
+    if reason == .Destroyed { return }
+    fmt.eprintln(&quot;Device lost:&quot;, reason, message)
+    intrinsics.atomic_store(&amp;gpu_fault, true)
+}
+
+uncaptured_error :: proc &quot;c&quot; (device: ^wgpu.Device, error_type: wgpu.ErrorType,
+                             message: wgpu.StringView, userdata1, userdata2: rawptr) {
+    context = runtime.default_context()
+    fmt.eprintln(&quot;WebGPU error:&quot;, error_type, message)
+    intrinsics.atomic_store(&amp;gpu_fault, true)
+}
+
+gpu_request_device :: proc(gpu: ^GPU) -&gt; bool {
+    options := wgpu.RequestAdapterOptions{
+        compatibleSurface = gpu.platform.surface,
+        powerPreference = .HighPerformance,
+        featureLevel = .Core,
+    }
+    _ = wgpu.InstanceRequestAdapter(gpu.instance, &amp;options, {
+        mode = .AllowSpontaneos, callback = adapter_ready, userdata1 = gpu,
+    })
+    // Verified wgpu-native 29.0.1.1 behavior: these two request callbacks run inline.
+    // Do not carry this assumption to Dawn or to a later native implementation.
+    assert(gpu.adapter_done, &quot;Pinned wgpu-native request contract changed&quot;)
+    if gpu.adapter == nil { return false }
+    descriptor := wgpu.DeviceDescriptor{
+        label = &quot;2D device&quot;, defaultQueue = {label = &quot;2D queue&quot;},
+        deviceLostCallbackInfo = {mode = .AllowSpontaneos, callback = device_lost},
+        uncapturedErrorCallbackInfo = {callback = uncaptured_error},
+    }
+    _ = wgpu.AdapterRequestDevice(gpu.adapter, &amp;descriptor, {
+        mode = .AllowSpontaneos, callback = device_ready, userdata1 = gpu,
+    })
+    assert(gpu.device_done, &quot;Pinned wgpu-native request contract changed&quot;)
+    if gpu.device == nil { return false }
+    gpu.queue = wgpu.DeviceGetQueue(gpu.device)
+    return gpu.queue != nil &amp;&amp; !gpu_failed()
+}
+
+gpu_choose_surface :: proc(gpu: ^GPU) -&gt; bool {
+    caps, status := wgpu.SurfaceGetCapabilities(gpu.platform.surface, gpu.adapter)
+    if status != .Success {
+        fmt.eprintln(&quot;Surface capabilities unavailable:&quot;, status)
+        return false
+    }
+    defer wgpu.SurfaceCapabilitiesFreeMembers(caps)
+    format: wgpu.TextureFormat = .Undefined
+    for candidate in caps.formats[:caps.formatCount] {
+        if candidate == .BGRA8UnormSrgb || candidate == .RGBA8UnormSrgb {
+            format = candidate
+            break
+        }
+    }
+    if format == .Undefined || !(.RenderAttachment in caps.usages) {
+        fmt.eprintln(&quot;This example needs an sRGB RGBA/BGRA renderable surface&quot;)
+        return false
+    }
+    fifo := false
+    for mode in caps.presentModes[:caps.presentModeCount] {
+        if mode == .Fifo { fifo = true }
+    }
+    if !fifo { fmt.eprintln(&quot;Surface does not offer FIFO presentation&quot;); return false }
+    alpha: wgpu.CompositeAlphaMode = .Auto
+    for mode in caps.alphaModes[:caps.alphaModeCount] {
+        if mode == .Opaque { alpha = .Opaque }
+    }
+    limits, limit_status := wgpu.DeviceGetLimits(gpu.device)
+    if limit_status != .Success { return false }
+    gpu.max_texture_dimension = limits.maxTextureDimension2D
+    gpu.config = {
+        device = gpu.device, format = format, usage = {.RenderAttachment},
+        presentMode = .Fifo, alphaMode = alpha,
+    }
+    fmt.println(&quot;Surface format:&quot;, format)
+    return true
+}
+
+gpu_refresh_surface :: proc(gpu: ^GPU, window: ^sdl.Window) -&gt; bool {
+    width, height: c.int
+    if !sdl.GetWindowSizeInPixels(window, &amp;width, &amp;height) {
+        fmt.eprintln(&quot;Drawable size:&quot;, sdl.GetError())
+        intrinsics.atomic_store(&amp;gpu_fault, true)
+        return false
+    }
+    if width &lt;= 0 || height &lt;= 0 { return false }
+    if u32(width) &gt; gpu.max_texture_dimension || u32(height) &gt; gpu.max_texture_dimension {
+        return false
+    }
+    if gpu.dirty || !gpu.configured || gpu.config.width != u32(width) || gpu.config.height != u32(height) {
+        gpu.config.width = u32(width)
+        gpu.config.height = u32(height)
+        wgpu.SurfaceConfigure(gpu.platform.surface, &amp;gpu.config)
+        gpu.configured = !gpu_failed()
+        gpu.dirty = false
+    }
+    return gpu.configured
+}
+</code></pre></figure></details><details class="source-file"><summary>src/renderer.odin <span>121 lines</span></summary><p><a download href="../checkpoints/09/src/renderer.odin">Download this checkpoint’s src/renderer.odin</a></p><figure class="code-block"><figcaption>checkpoints/09/src/renderer.odin · complete file</figcaption><pre><code class="language-odin" data-source="checkpoints/09/src/renderer.odin">package character
+import &quot;core:fmt&quot;
+import sdl &quot;vendor:sdl3&quot;
+import wgpu &quot;vendor:wgpu&quot;
+
+renderer_frame :: proc(gpu: ^GPU, window: ^sdl.Window, renderer: ^Renderer) -&gt; bool {
+    if !gpu_refresh_surface(gpu, window) { sdl.Delay(10); return !gpu_failed() }
+    frame := wgpu.SurfaceGetCurrentTexture(gpu.platform.surface)
+    // Release any returned handle on every exit path, including a failed acquisition.
+    defer if frame.texture != nil { wgpu.TextureRelease(frame.texture) }
+    #partial switch frame.status {
+    case .SuccessOptimal:
+    case .SuccessSuboptimal: gpu.dirty = true
+    case .Timeout, .Occluded: sdl.Delay(10); return true
+    case .Outdated: gpu.dirty = true; sdl.Delay(10); return true
+    case .Lost:
+        fmt.eprintln(&quot;Surface lost; close and restart this small example&quot;)
+        return false
+    case:
+        fmt.eprintln(&quot;Surface acquisition:&quot;, frame.status)
+        return false
+    }
+    if frame.texture == nil { fmt.eprintln(&quot;Successful acquisition without a texture&quot;); return false }
+    view := wgpu.TextureCreateView(frame.texture, nil)
+    if view == nil { return false }
+    defer wgpu.TextureViewRelease(view)
+    encoder := wgpu.DeviceCreateCommandEncoder(gpu.device, &amp;wgpu.CommandEncoderDescriptor{label = &quot;frame&quot;})
+    if encoder == nil { return false }
+    defer wgpu.CommandEncoderRelease(encoder)
+    attachment := wgpu.RenderPassColorAttachment{
+        view = view, depthSlice = wgpu.DEPTH_SLICE_UNDEFINED,
+        loadOp = .Clear, storeOp = .Store, clearValue = {0.018, 0.028, 0.048, 1},
+    }
+    pass_descriptor := wgpu.RenderPassDescriptor{
+        label = &quot;window color pass&quot;, colorAttachmentCount = 1, colorAttachments = &amp;attachment,
+    }
+    pass := wgpu.CommandEncoderBeginRenderPass(encoder, &amp;pass_descriptor)
+    if pass == nil { return false }
+    defer wgpu.RenderPassEncoderRelease(pass)
+    wgpu.RenderPassEncoderSetPipeline(pass, renderer.pipeline)
+    wgpu.RenderPassEncoderSetVertexBuffer(pass, 0, renderer.vertex_buffer, 0, size_of(VERTICES))
+    wgpu.RenderPassEncoderDraw(pass, 3, 1, 0, 0)
+    wgpu.RenderPassEncoderEnd(pass)
+    commands := wgpu.CommandEncoderFinish(encoder, &amp;wgpu.CommandBufferDescriptor{label = &quot;finished frame&quot;})
+    if commands == nil { return false }
+    defer wgpu.CommandBufferRelease(commands)
+    if gpu_failed() { return false }
+    wgpu.QueueSubmit(gpu.queue, []wgpu.CommandBuffer{commands})
+    if wgpu.SurfacePresent(gpu.platform.surface) != .Success {
+        fmt.eprintln(&quot;Surface presentation failed&quot;)
+        return false
+    }
+    return !gpu_failed()
+}
+
+Vertex :: struct {
+    position: [2]f32,
+    color: [4]f32,
+}
+#assert(size_of(Vertex) == 24)
+#assert(offset_of(Vertex, position) == 0)
+#assert(offset_of(Vertex, color) == 8)
+
+VERTICES :: [3]Vertex{
+    {{-0.6, -0.5}, {1, 0.1, 0.1, 1}},
+    {{ 0.6, -0.5}, {0.1, 1, 0.1, 1}},
+    {{ 0.0,  0.6}, {0.1, 0.1, 1, 1}},
+}
+
+Renderer :: struct {
+    pipeline: wgpu.RenderPipeline,
+    vertex_buffer: wgpu.Buffer,
+}
+
+renderer_init :: proc(renderer: ^Renderer, gpu: ^GPU) -&gt; bool {
+    renderer.vertex_buffer = wgpu.DeviceCreateBuffer(gpu.device, &amp;wgpu.BufferDescriptor{
+        label = &quot;character vertices&quot;, size = size_of(VERTICES), usage = {.Vertex, .CopyDst},
+    })
+    if renderer.vertex_buffer == nil { return false }
+    vertices := VERTICES
+    wgpu.QueueWriteBuffer(gpu.queue, renderer.vertex_buffer, 0, &amp;vertices, size_of(vertices))
+    source := wgpu.ShaderSourceWGSL{
+        chain = {sType = .ShaderSourceWGSL}, code = #load(&quot;../shaders/character.wgsl&quot;, string),
+    }
+    shader := wgpu.DeviceCreateShaderModule(gpu.device, &amp;wgpu.ShaderModuleDescriptor{
+        label = &quot;character WGSL&quot;, nextInChain = &amp;source.chain,
+    })
+    if shader == nil { return false }
+    defer wgpu.ShaderModuleRelease(shader)
+    if gpu_failed() { return false }
+    layout := wgpu.DeviceCreatePipelineLayout(gpu.device, &amp;wgpu.PipelineLayoutDescriptor{
+        label = &quot;empty resource interface&quot;,
+    })
+    if layout == nil { return false }
+    defer wgpu.PipelineLayoutRelease(layout)
+    target := wgpu.ColorTargetState{format = gpu.config.format, writeMask = {.Red, .Green, .Blue, .Alpha}}
+    fragment := wgpu.FragmentState{module = shader, entryPoint = &quot;fs_main&quot;, targetCount = 1, targets = &amp;target}
+    attributes := [2]wgpu.VertexAttribute{
+        {format = .Float32x2, offset = u64(offset_of(Vertex, position)), shaderLocation = 0},
+        {format = .Float32x4, offset = u64(offset_of(Vertex, color)), shaderLocation = 1},
+    }
+    vertex_layout := wgpu.VertexBufferLayout{
+        arrayStride = size_of(Vertex), stepMode = .Vertex,
+        attributeCount = len(attributes), attributes = raw_data(attributes[:]),
+    }
+    descriptor := wgpu.RenderPipelineDescriptor{
+        label = &quot;character pipeline&quot;, layout = layout,
+        vertex = {module = shader, entryPoint = &quot;vs_main&quot;, bufferCount = 1, buffers = &amp;vertex_layout},
+        fragment = &amp;fragment,
+        primitive = {topology = .TriangleList, frontFace = .CCW, cullMode = .None},
+        multisample = {count = 1, mask = 0xffffffff},
+    }
+    renderer.pipeline = wgpu.DeviceCreateRenderPipeline(gpu.device, &amp;descriptor)
+    return renderer.pipeline != nil &amp;&amp; !gpu_failed()
+}
+
+renderer_destroy :: proc(renderer: ^Renderer) {
+    if renderer.vertex_buffer != nil { wgpu.BufferRelease(renderer.vertex_buffer) }
+    if renderer.pipeline != nil { wgpu.RenderPipelineRelease(renderer.pipeline) }
+    renderer^ = {}
+}
+</code></pre></figure></details><details class="source-file"><summary>shaders/character.wgsl <span>17 lines</span></summary><p><a download href="../checkpoints/09/shaders/character.wgsl">Download this checkpoint’s shaders/character.wgsl</a></p><figure class="code-block"><figcaption>checkpoints/09/shaders/character.wgsl · complete file</figcaption><pre><code class="language-wgsl" data-source="checkpoints/09/shaders/character.wgsl">struct Vertex_Out {
+    @builtin(position) clip_position: vec4f,
+    @location(0) color: vec4f,
+}
+
+@vertex
+fn vs_main(@location(0) position: vec2f, @location(1) color: vec4f) -&gt; Vertex_Out {
+    var out: Vertex_Out;
+    out.clip_position = vec4f(position, 0.0, 1.0);
+    out.color = color;
+    return out;
+}
+
+@fragment
+fn fs_main(in: Vertex_Out) -&gt; @location(0) vec4f {
+    return in.color;
+}
+</code></pre></figure></details></section><nav class="chapter-navigation" aria-label="Chapter navigation"><a href="../chapters/08-the-first-triangle.html"><span>← Previous Chapter</span><small>The first triangle</small></a><a href="../contents.html">Contents</a><a href="../chapters/10-four-corners-six-indices.html"><span>Next Chapter →</span><small>Four corners, six indices</small></a></nav></article></main><footer class="page-footer"><span>Native Pixels · September 2026 edition</span><a href="../appendix/sources.html">Sources &amp; verification</a><a href="../LICENSE">MIT License</a><a href="#top">Back to top ↑</a></footer></div></body></html>

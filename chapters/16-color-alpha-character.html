@@ -1,0 +1,623 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="description" content="Give the rectangle a face, then make transparency an explicit pipeline decision."><meta name="author" content="Rabin Gaire"><title>Color, alpha, and the final character — Native Pixels</title><link rel="canonical" href="https://rabingaire.com.np/native-pixels/chapters/16-color-alpha-character.html"><link rel="sitemap" type="application/xml" href="../sitemap.xml"><meta property="og:type" content="article"><meta property="og:site_name" content="Native Pixels"><meta property="og:locale" content="en_US"><meta property="og:title" content="Color, alpha, and the final character — Native Pixels"><meta property="og:description" content="Give the rectangle a face, then make transparency an explicit pipeline decision."><meta property="og:url" content="https://rabingaire.com.np/native-pixels/chapters/16-color-alpha-character.html"><meta property="og:image" content="https://rabingaire.com.np/native-pixels/assets/room-gameplay.png"><meta property="og:image:alt" content="Pixel-art room rendered with native WebGPU, Odin, and SDL3"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Color, alpha, and the final character — Native Pixels"><meta name="twitter:description" content="Give the rectangle a face, then make transparency an explicit pipeline decision."><meta name="twitter:image" content="https://rabingaire.com.np/native-pixels/assets/room-gameplay.png"><script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Book","@id":"https://rabingaire.com.np/native-pixels/#book","name":"Native Pixels","url":"https://rabingaire.com.np/native-pixels/","description":"Learn native 2D WebGPU with Odin and SDL3 in 23 chapters. Build a pixel-art game with sprite animation, collision, and complete runnable source.","inLanguage":"en","isAccessibleForFree":true,"author":{"@type":"Person","name":"Rabin Gaire"},"license":"https://rabingaire.com.np/native-pixels/LICENSE","image":"https://rabingaire.com.np/native-pixels/assets/room-gameplay.png"},{"@type":"Chapter","@id":"https://rabingaire.com.np/native-pixels/chapters/16-color-alpha-character.html","url":"https://rabingaire.com.np/native-pixels/chapters/16-color-alpha-character.html","name":"Color, alpha, and the final character","description":"Give the rectangle a face, then make transparency an explicit pipeline decision.","inLanguage":"en","isPartOf":{"@id":"https://rabingaire.com.np/native-pixels/#book"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Native Pixels","item":"https://rabingaire.com.np/native-pixels/"},{"@type":"ListItem","position":2,"name":"Color, alpha, and the final character","item":"https://rabingaire.com.np/native-pixels/chapters/16-color-alpha-character.html"}]}]}</script><script>try{const theme=localStorage.getItem("native-pixels-theme");if(theme==="light"||theme==="dark")document.documentElement.dataset.theme=theme;}catch{}</script><link rel="stylesheet" href="../assets/style.css"><script defer src="../assets/book.js"></script></head>
+<body id="top" class="reading-page"><a class="skip-link" href="#main">Skip to content</a><div class="reading-progress" aria-hidden="true"></div><aside class="book-rail"><a class="wordmark" href="../index.html"><span class="brand-mark" aria-hidden="true">▰</span><span>Native Pixels<span class="edition">ODIN / SDL3 / WEBGPU</span></span></a><nav class="rail-primary" aria-label="Book navigation"><a class="rail-link" href="../index.html"><span class="rail-label">Overview</span></a><a class="rail-link" href="../contents.html"><span class="rail-label">All chapters</span></a><a class="rail-link" href="../appendix/build.html"><span class="rail-label">Build the game</span></a></nav><div class="rail-context"><p class="rail-kicker">Chapter 16</p><a class="rail-title" href="#top">Color, alpha, and the final character</a><nav class="rail-sections" aria-label="Chapter sections"><a class="rail-link numbered" href="#section-1"><span class="rail-index">16.1</span><span class="rail-label">Color is a value; alpha is a blending input</span></a><a class="rail-link numbered" href="#section-2"><span class="rail-index">16.2</span><span class="rail-label">A recognizable character needs very little art</span></a><a class="rail-link numbered" href="#section-3"><span class="rail-index">16.3</span><span class="rail-label">Pass local position through the rasterizer</span></a><a class="rail-link numbered" href="#section-4"><span class="rail-index">16.4</span><span class="rail-label">Alpha is an input to a composition rule</span></a><a class="rail-link numbered" href="#section-5"><span class="rail-index">16.5</span><span class="rail-label">Color encoding does not replace blending</span></a><a class="rail-link numbered" href="#section-6"><span class="rail-index">16.6</span><span class="rail-label">Why stop before textures?</span></a><a class="rail-link numbered" href="#section-7"><span class="rail-index">16.7</span><span class="rail-label">When this work happens</span></a><a class="rail-link numbered" href="#section-8"><span class="rail-index">16.8</span><span class="rail-label">Read the symptom, test a hypothesis</span></a><a class="rail-link numbered" href="#section-9"><span class="rail-index">16.9</span><span class="rail-label">Experiments</span></a><a class="rail-link numbered" href="#section-10"><span class="rail-index">16.10</span><span class="rail-label">What we have now</span></a><a class="rail-link numbered" href="#section-11"><span class="rail-index">16.11</span><span class="rail-label">Challenges</span></a><a class="rail-link numbered" href="#section-12"><span class="rail-index">16.12</span><span class="rail-label">Exact code changes and runnable checkpoint</span></a></nav><div class="rail-prev-next"><a href="../chapters/15-movement-in-seconds.html">← Previous</a><a href="../chapters/17-lifetimes-and-debugging.html">Next →</a></div></div><div class="rail-reference"><p class="rail-kicker">Keep nearby</p><nav aria-label="Reference pages"><a class="rail-link" href="../appendix/final-source.html"><span class="rail-label">Complete final source</span></a><a class="rail-link" href="../appendix/glossary.html"><span class="rail-label">Glossary</span></a><a class="rail-link" href="../appendix/cheat-sheets.html"><span class="rail-label">Initialization, frame, and lifetime sheets</span></a><a class="rail-link" href="../appendix/sources.html"><span class="rail-label">Sources and verification record</span></a></nav></div></aside><div class="page-shell"><header class="topbar"><div class="breadcrumb"><a href="../index.html">Native Pixels</a><span aria-hidden="true">/</span><span>Chapter 16</span></div><div class="reader-controls"><button type="button" class="theme-toggle" hidden aria-label="Change color theme">Theme</button><button type="button" class="focus-toggle" hidden aria-pressed="false">Focus</button><a class="mobile-contents" href="../contents.html">Contents</a></div></header><main id="main" tabindex="-1"><article class="chapter"><header class="chapter-header"><span class="chapter-display-number" aria-hidden="true">16</span><p class="eyebrow">IV · Move one character <span>Chapter 16 / 23</span></p><h1>Color, alpha, and the final character</h1><p class="deck">Give the rectangle a face, then make transparency an explicit pipeline decision.</p><p class="reading-meta">7 min read + implementation · checkpoint 16</p></header><aside class="callout outcome"><strong>At the end of this chapter</strong><p>A green geometric character with eyes and a mouth moves around the window; its pipeline supports straight-alpha blending.</p></aside><nav class="on-this-page" aria-label="On this page"><details><summary>In this chapter</summary><ol><li><a href="#section-1"><span>16.1</span> Color is a value; alpha is a blending input</a></li><li><a href="#section-2"><span>16.2</span> A recognizable character needs very little art</a></li><li><a href="#section-3"><span>16.3</span> Pass local position through the rasterizer</a></li><li><a href="#section-4"><span>16.4</span> Alpha is an input to a composition rule</a></li><li><a href="#section-5"><span>16.5</span> Color encoding does not replace blending</a></li><li><a href="#section-6"><span>16.6</span> Why stop before textures?</a></li><li><a href="#section-7"><span>16.7</span> When this work happens</a></li><li><a href="#section-8"><span>16.8</span> Read the symptom, test a hypothesis</a></li><li><a href="#section-9"><span>16.9</span> Experiments</a></li><li><a href="#section-10"><span>16.10</span> What we have now</a></li><li><a href="#section-11"><span>16.11</span> Challenges</a></li><li><a href="#section-12"><span>16.12</span> Exact code changes and runnable checkpoint</a></li></ol></details></nav><section class="learning-guide"><h2 id="section-1"><span class="section-number" aria-hidden="true">16.1</span>Color is a value; alpha is a blending input<a class="heading-link" href="#section-1" aria-label="Link to Color is a value; alpha is a blending input">#</a></h2><p>RGB describes red, green, and blue contributions. Alpha tells our source-over blend how much of the source contributes. The blend rule combines the fragment shader’s source with the destination color already in the attachment. Writing alpha 0.5 alone does not enable blending; the pipeline must have matching blend factors.</p><p>With straight-alpha output, a red source (1,0,0) at alpha 0.5 over opaque blue (0,0,1) produces linear RGB (0.5,0,0.5). The destination stays opaque. The sRGB attachment encodes RGB for storage afterward, so these linear arithmetic values are not the same as averaging encoded screenshot bytes.</p><p>Interpolated local coordinates let the fragment shader identify an eye region inside the rectangle. They move with the character because they come from its local corners. This completes the geometric character; chapter 19 replaces the procedural face with a sampled picture using the same rendering foundation.</p></section><section><h2 id="section-2"><span class="section-number" aria-hidden="true">16.2</span>A recognizable character needs very little art<a class="heading-link" href="#section-2" aria-label="Link to A recognizable character needs very little art">#</a></h2><p>Our application already meets the movement goal. We will add a face without introducing texture loading, sampling, or an asset pipeline. The local unit-square coordinates give each fragment a useful location within the character. The fragment shader can test a few small rectangles for eyes and a mouth and choose a dark color for those regions.</p><p>This is still triangle rendering. The face does not create more vertices or separate draw calls. The rasterizer covers the same two triangles, while the fragment shader chooses different colors within their coverage. The GPU’s geometry and coloring responsibilities are now especially easy to distinguish.</p></section><section><h2 id="section-3"><span class="section-number" aria-hidden="true">16.3</span>Pass local position through the rasterizer<a class="heading-link" href="#section-3" aria-label="Link to Pass local position through the rasterizer">#</a></h2><p>In <code>shaders/character.wgsl</code>, add <code>@location(1) local_position: vec2f</code> to <code>Vertex_Out</code>. In <code>vs_main</code>, assign <code>out.local_position = position</code> before returning. This is the original local position from the vertex buffer, not the clip position. The rasterizer interpolates it across the rectangle, producing values approximately in [0,1] inside the character.</p><figure class="code-block"><figcaption>shaders/character.wgsl · fn fs_main</figcaption><pre><code class="language-wgsl">fn fs_main(in: Vertex_Out) -&gt; @location(0) vec4f {
+    let p = in.local_position;
+    let left_eye = p.x &gt; 0.22 &amp;&amp; p.x &lt; 0.36 &amp;&amp; p.y &gt; 0.25 &amp;&amp; p.y &lt; 0.39;
+    let right_eye = p.x &gt; 0.64 &amp;&amp; p.x &lt; 0.78 &amp;&amp; p.y &gt; 0.25 &amp;&amp; p.y &lt; 0.39;
+    let mouth = p.x &gt; 0.35 &amp;&amp; p.x &lt; 0.65 &amp;&amp; p.y &gt; 0.62 &amp;&amp; p.y &lt; 0.69;
+    if left_eye || right_eye || mouth {
+        return vec4f(0.012, 0.025, 0.040, in.color.a);
+    }
+    return in.color;
+}</code></pre></figure><p>The eye and mouth tests operate in character-local fractions, so the features follow position and scale automatically. At x=0.29 and y=0.32, for example, a fragment lies inside the left eye. A fragment at the center of the body falls through to the interpolated body color. Because both triangles agree on local corner values, the diagonal does not interrupt the face.</p><p>The dark face color uses the same alpha as the body. If we later make the character partially transparent, the eyes and mouth remain part of the same opacity convention. These tests have hard edges at single-sample coverage; we do not claim they provide analytic antialiasing. The aim is a simple recognizable figure, not a shader-art system.</p></section><section><h2 id="section-4"><span class="section-number" aria-hidden="true">16.4</span>Alpha is an input to a composition rule<a class="heading-link" href="#section-4" aria-label="Link to Alpha is an input to a composition rule">#</a></h2><p>An alpha value of 0.5 does not inherently mean “show half the background.” With blending disabled, writing RGBA (green,0.5) can simply replace the previous target value, including its alpha. To combine the character color with the cleared background, the pipeline must enable a blend state.</p><p>We use straight alpha: the shader’s RGB values are unmultiplied colors, and alpha separately describes their opacity. For source color Cs, destination color Cd, and source alpha As, the RGB equation is <code>Cs × As + Cd × (1 − As)</code>. The output alpha is <code>As + Ad × (1 − As)</code>. The background starts with alpha one, so the resulting window image remains alpha one.</p><figure class="code-block"><figcaption>src/renderer.odin · renderer_init · replace the previous ColorTargetState</figcaption><pre><code class="language-odin">blend := wgpu.BlendState{
+    color = {operation = .Add, srcFactor = .SrcAlpha, dstFactor = .OneMinusSrcAlpha},
+    alpha = {operation = .Add, srcFactor = .One, dstFactor = .OneMinusSrcAlpha},
+}
+target := wgpu.ColorTargetState{
+    format = gpu.config.format, blend = &amp;blend, writeMask = {.Red, .Green, .Blue, .Alpha},
+}</code></pre></figure><p>The color and alpha components have different source factors. Multiplying source alpha by itself would give As² rather than As in the alpha equation. Premultiplied alpha would instead supply RGB already multiplied by alpha and normally use source factor One for color too. Both conventions can work; mixing straight shader output with premultiplied blend factors gives the wrong result.</p><p>Blending is part of the pipeline because it affects output compatibility and fixed backend state. The descriptor’s blend pointer is local CPU input read during pipeline creation. Changing a local BlendState after the pipeline was created does not mutate that pipeline. Changing the character’s tint alpha, on the other hand, changes uniform data and needs no new pipeline.</p></section><section><h2 id="section-5"><span class="section-number" aria-hidden="true">16.5</span>Color encoding does not replace blending<a class="heading-link" href="#section-5" aria-label="Link to Color encoding does not replace blending">#</a></h2><p>Our surface target is sRGB. The shader works with linear RGB values; the attachment handles sRGB storage conversion. Blend calculations use the appropriate linear color values. If you put a familiar sRGB display value such as 0.5 directly into the shader, you are specifying linear 0.5, which displays much brighter than an sRGB-encoded 0.5 swatch. For these chosen geometric colors, we define the numbers as linear from the outset.</p><p>Surface composite alpha remains separate: it controls the whole window image’s relationship with the desktop compositor. Our opaque background ensures that window image is opaque. The character’s blend alpha only combines it with pixels already in our own attachment. You can make the character translucent without making the desktop visible through the window.</p><p>Ordering matters when transparent objects overlap. A source-over blend is not commutative. We have one character over a cleared background, so the order is completely explicit and no sorting system is needed. The internal shared triangle edge follows rasterization coverage rules; it is not two full-opacity layers painted on top of each other.</p></section><section><h2 id="section-6"><span class="section-number" aria-hidden="true">16.6</span>Why stop before textures?<a class="heading-link" href="#section-6" aria-label="Link to Why stop before textures?">#</a></h2><p>A textured sprite would require another texture, a view, a sampler, bind-group entries, UV coordinates, and an upload path with row-layout rules. Those are worthwhile topics, but they are not necessary to explain this character’s movement or the WebGPU frame lifecycle. This part ends with the geometric character; chapter 19 introduces those texture concepts one at a time. You already use a texture and view for presentation; an artwork texture would be a second role for the same resource model, sampled by a shader instead of used as the output attachment.</p></section><section><h2 id="section-7"><span class="section-number" aria-hidden="true">16.7</span>When this work happens<a class="heading-link" href="#section-7" aria-label="Link to When this work happens">#</a></h2><div class="table-scroll"><table><thead><tr><th scope="col">Operation</th><th scope="col">Frequency</th><th scope="col">Reason</th></tr></thead><tbody><tr><td>Create blending pipeline</td><td>Initialization</td><td>Fix the source-over output rule</td></tr><tr><td>Interpolate local coordinates</td><td>GPU rasterization</td><td>Locate fragments within the character</td></tr><tr><td>Choose face/body color and blend</td><td>Per fragment</td><td>Compute and combine the visible color</td></tr><tr><td>Set tint alpha</td><td>Uniform update when desired</td><td>Change opacity without changing pipeline state</td></tr></tbody></table></div></section><section><h2 id="section-8"><span class="section-number" aria-hidden="true">16.8</span>Read the symptom, test a hypothesis<a class="heading-link" href="#section-8" aria-label="Link to Read the symptom, test a hypothesis">#</a></h2><div class="table-scroll"><table><thead><tr><th scope="col">Symptom</th><th scope="col">What to inspect</th><th scope="col">Why it matters</th></tr></thead><tbody><tr><td>Lower alpha has no visible effect</td><td>Whether the pipeline target has a blend state</td><td>Alpha alone does not request composition</td></tr><tr><td>Dark halos or bright transparency</td><td>Straight versus premultiplied RGB convention</td><td>Shader values and blend factors must agree</td></tr><tr><td>Face sticks to the window while body moves</td><td>Which coordinates the fragment shader uses</td><td>Character-local coordinates move with the geometry</td></tr></tbody></table></div></section><section><h2 id="section-9"><span class="section-number" aria-hidden="true">16.9</span>Experiments<a class="heading-link" href="#section-9" aria-label="Link to Experiments">#</a></h2><p>These short, optional checks help you test the explanation. Predict the result first, then run the program. Restore the chapter’s baseline before continuing; later chapters assume the supplied checkpoint.</p><ol><li>Set game tint alpha to 0.5 in main, rebuild, and inspect the background showing through the character. Restore one for the final baseline.</li><li>Move one eye by changing its local x interval. Observe that no vertex data changes.</li><li>Set source color factor to One while keeping straight output and alpha 0.5. Predict the overly bright contribution, then restore SrcAlpha.</li></ol></section><section><h2 id="section-10"><span class="section-number" aria-hidden="true">16.10</span>What we have now<a class="heading-link" href="#section-10" aria-label="Link to What we have now">#</a></h2><p>A green geometric character with eyes and a mouth moves around the window; its pipeline supports straight-alpha blending.</p><p>Before moving on, run this checkpoint and compare it with the stated result. If it differs, use the symptom table above or the complete files below to locate the missing step.</p><p>Run <code>odin run checkpoints/16/src</code> from the book root, with the SDL linker flags for your platform. <a href="../appendix/build.html">Dependency and build instructions →</a></p></section><section class="challenges"><h2 id="section-11"><span class="section-number" aria-hidden="true">16.11</span>Challenges<a class="heading-link" href="#section-11" aria-label="Link to Challenges">#</a></h2><p class="challenge-intro">Optional extensions. The complete game in chapter 23 requires none of these. Work in a separate copy if you want to explore; the next chapter starts from this chapter’s supplied baseline.</p><ol><li><h3>A blinking face</h3><p>Add a time or blink parameter to the uniform contract and use it to shorten the eye rectangles briefly. Update both host and WGSL layouts with their assertions.</p><p class="challenge-check"><strong>Check your result:</strong> Blinking changes the face without moving vertices or rebuilding the pipeline each frame.</p></li><li><h3>A translucent marker</h3><p>Add a separately positioned translucent quad behind or in front of the character. Use independent per-draw data as described in chapter 12.</p><p class="challenge-check"><strong>Check your result:</strong> Swapping draw order changes overlapping colors in the way source-over blending predicts.</p></li></ol></section><section><h2 id="section-12"><span class="section-number" aria-hidden="true">16.12</span>Exact code changes and runnable checkpoint<a class="heading-link" href="#section-12" aria-label="Link to Exact code changes and runnable checkpoint">#</a></h2><div class="table-scroll"><table><thead><tr><th scope="col">File</th><th scope="col">Operation</th></tr></thead><tbody><tr><td><code>src/renderer.odin</code></td><td>Replace the changed portions shown below; preserve all other code</td></tr><tr><td><code>shaders/character.wgsl</code></td><td>Replace the changed portions shown below; preserve all other code</td></tr></tbody></table></div><details class="change-record"><summary>Exact patch from the preceding checkpoint</summary><p><a download href="../checkpoints/16/changes.patch">Download changes.patch</a> · inspect or apply with <code>patch -p1</code> from your own project directory at the previous checkpoint.</p><figure class="code-block"><pre><code class="language-diff">--- before/src/renderer.odin
++++ after/src/renderer.odin
+@@ -145,7 +145,13 @@
+     })
+     if layout == nil { return false }
+     defer wgpu.PipelineLayoutRelease(layout)
+-    target := wgpu.ColorTargetState{format = gpu.config.format, writeMask = {.Red, .Green, .Blue, .Alpha}}
++    blend := wgpu.BlendState{
++        color = {operation = .Add, srcFactor = .SrcAlpha, dstFactor = .OneMinusSrcAlpha},
++        alpha = {operation = .Add, srcFactor = .One, dstFactor = .OneMinusSrcAlpha},
++    }
++    target := wgpu.ColorTargetState{
++        format = gpu.config.format, blend = &amp;blend, writeMask = {.Red, .Green, .Blue, .Alpha},
++    }
+     fragment := wgpu.FragmentState{module = shader, entryPoint = &quot;fs_main&quot;, targetCount = 1, targets = &amp;target}
+     attributes := [2]wgpu.VertexAttribute{
+         {format = .Float32x2, offset = u64(offset_of(Vertex, position)), shaderLocation = 0},
+--- before/shaders/character.wgsl
++++ after/shaders/character.wgsl
+@@ -10,6 +10,7 @@
+ struct Vertex_Out {
+     @builtin(position) clip_position: vec4f,
+     @location(0) color: vec4f,
++    @location(1) local_position: vec2f,
+ }
+ 
+ @vertex
+@@ -20,10 +21,18 @@
+                    1.0 - 2.0 * pixel.y / uniforms.view_size.y);
+     out.clip_position = vec4f(ndc, 0.0, 1.0);
+     out.color = color * uniforms.tint;
++    out.local_position = position;
+     return out;
+ }
+ 
+ @fragment
+ fn fs_main(in: Vertex_Out) -&gt; @location(0) vec4f {
++    let p = in.local_position;
++    let left_eye = p.x &gt; 0.22 &amp;&amp; p.x &lt; 0.36 &amp;&amp; p.y &gt; 0.25 &amp;&amp; p.y &lt; 0.39;
++    let right_eye = p.x &gt; 0.64 &amp;&amp; p.x &lt; 0.78 &amp;&amp; p.y &gt; 0.25 &amp;&amp; p.y &lt; 0.39;
++    let mouth = p.x &gt; 0.35 &amp;&amp; p.x &lt; 0.65 &amp;&amp; p.y &gt; 0.62 &amp;&amp; p.y &lt; 0.69;
++    if left_eye || right_eye || mouth {
++        return vec4f(0.012, 0.025, 0.040, in.color.a);
++    }
+     return in.color;
+ }</code></pre></figure></details><p>Complete end-of-chapter files follow. These are already present in <code>checkpoints/16/</code>; no assembly from excerpts is required.</p><details class="source-file"><summary>src/main.odin <span>63 lines</span></summary><p><a download href="../checkpoints/16/src/main.odin">Download this checkpoint’s src/main.odin</a></p><figure class="code-block"><figcaption>checkpoints/16/src/main.odin · complete file</figcaption><pre><code class="language-odin" data-source="checkpoints/16/src/main.odin">package character
+import &quot;core:fmt&quot;
+import &quot;core:c&quot;
+import sdl &quot;vendor:sdl3&quot;
+import wgpu &quot;vendor:wgpu&quot;
+
+main :: proc() {
+    if !sdl.Init({.VIDEO}) {
+        fmt.eprintln(&quot;SDL initialization:&quot;, sdl.GetError())
+        return
+    }
+    defer sdl.Quit()
+    flags: sdl.WindowFlags = {.RESIZABLE, .HIGH_PIXEL_DENSITY}
+    when ODIN_OS == .Darwin { flags += {.METAL} }
+    window := sdl.CreateWindow(&quot;Native Pixels&quot;, 960, 640, flags)
+    if window == nil {
+        fmt.eprintln(&quot;Window creation:&quot;, sdl.GetError())
+        return
+    }
+    defer sdl.DestroyWindow(window)
+    if !sdl.ShowWindow(window) {
+        fmt.eprintln(&quot;Show window:&quot;, sdl.GetError())
+        return
+    }
+    if !sdl.RaiseWindow(window) { fmt.eprintln(&quot;Window focus request:&quot;, sdl.GetError()) }
+
+    gpu: GPU
+    defer gpu_destroy(&amp;gpu)
+    if !gpu_init(&amp;gpu, window) { return }
+
+    renderer: Renderer
+    defer renderer_destroy(&amp;renderer)
+    if !renderer_init(&amp;renderer, &amp;gpu) { return }
+
+    game := Game{position = {120, 100}, size = {48, 64}, tint = {1, 1, 1, 1}, speed = 240}
+    previous_ticks := sdl.GetTicksNS()
+    running := true
+    for running {
+        event: sdl.Event
+        for sdl.PollEvent(&amp;event) {
+            #partial switch event.type {
+            case .QUIT, .WINDOW_CLOSE_REQUESTED: running = false
+            case .WINDOW_PIXEL_SIZE_CHANGED, .WINDOW_RESTORED: gpu.dirty = true
+            }
+        }
+        if !running { break }
+        now := sdl.GetTicksNS()
+        dt := min(f64(now - previous_ticks) / 1_000_000_000.0, 0.05)
+        previous_ticks = now
+        wgpu.InstanceProcessEvents(gpu.instance)
+        if gpu_failed() { break }
+        width, height: c.int
+        if !sdl.GetWindowSize(window, &amp;width, &amp;height) { break }
+        if width &lt;= 0 || height &lt;= 0 || .MINIMIZED in sdl.GetWindowFlags(window) {
+            sdl.Delay(10)
+            continue
+        }
+        view_size := [2]f32{f32(width), f32(height)}
+        direction := read_movement(window)
+        game_update(&amp;game, direction, f32(dt), view_size)
+        if !renderer_frame(&amp;gpu, window, &amp;renderer, game.position, game.size, game.tint, view_size) { break }
+    }
+}
+</code></pre></figure></details><details class="source-file"><summary>src/platform.odin <span>73 lines</span></summary><p><a download href="../checkpoints/16/src/platform.odin">Download this checkpoint’s src/platform.odin</a></p><figure class="code-block"><figcaption>checkpoints/16/src/platform.odin · complete file</figcaption><pre><code class="language-odin" data-source="checkpoints/16/src/platform.odin">package character
+import &quot;core:fmt&quot;
+import sdl &quot;vendor:sdl3&quot;
+import wgpu &quot;vendor:wgpu&quot;
+
+// SDL owns the window. We own this extra Metal view, when one exists.
+Platform_Surface :: struct {
+    surface: wgpu.Surface,
+    metal_view: sdl.MetalView, // nil on Windows and Linux
+}
+
+platform_surface_create :: proc(instance: wgpu.Instance, window: ^sdl.Window) -&gt; Platform_Surface {
+    result: Platform_Surface
+    when ODIN_OS == .Darwin {
+        result.metal_view = sdl.Metal_CreateView(window)
+        if result.metal_view == nil {
+            fmt.eprintln(&quot;Metal view:&quot;, sdl.GetError())
+            return result
+        }
+        layer := sdl.Metal_GetLayer(result.metal_view)
+        if layer == nil { return result }
+        source := wgpu.SurfaceSourceMetalLayer{
+            chain = {sType = .SurfaceSourceMetalLayer}, layer = layer,
+        }
+        descriptor := wgpu.SurfaceDescriptor{nextInChain = &amp;source.chain, label = &quot;SDL Metal surface&quot;}
+        result.surface = wgpu.InstanceCreateSurface(instance, &amp;descriptor)
+    } else when ODIN_OS == .Windows {
+        properties := sdl.GetWindowProperties(window)
+        hwnd := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_WIN32_HWND_POINTER, nil)
+        instance_handle := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_WIN32_INSTANCE_POINTER, nil)
+        if hwnd == nil || instance_handle == nil { return result }
+        source := wgpu.SurfaceSourceWindowsHWND{
+            chain = {sType = .SurfaceSourceWindowsHWND}, hwnd = hwnd, hinstance = instance_handle,
+        }
+        descriptor := wgpu.SurfaceDescriptor{nextInChain = &amp;source.chain, label = &quot;SDL Win32 surface&quot;}
+        result.surface = wgpu.InstanceCreateSurface(instance, &amp;descriptor)
+    } else when ODIN_OS == .Linux {
+        properties := sdl.GetWindowProperties(window)
+        switch sdl.GetCurrentVideoDriver() {
+        case &quot;wayland&quot;:
+            display := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_WAYLAND_DISPLAY_POINTER, nil)
+            surface := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_WAYLAND_SURFACE_POINTER, nil)
+            if display == nil || surface == nil { return result }
+            source := wgpu.SurfaceSourceWaylandSurface{
+                chain = {sType = .SurfaceSourceWaylandSurface}, display = display, surface = surface,
+            }
+            descriptor := wgpu.SurfaceDescriptor{nextInChain = &amp;source.chain, label = &quot;SDL Wayland surface&quot;}
+            result.surface = wgpu.InstanceCreateSurface(instance, &amp;descriptor)
+        case &quot;x11&quot;:
+            display := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_X11_DISPLAY_POINTER, nil)
+            window_id := sdl.GetNumberProperty(properties, sdl.PROP_WINDOW_X11_WINDOW_NUMBER, 0)
+            if display == nil || window_id == 0 { return result }
+            source := wgpu.SurfaceSourceXlibWindow{
+                chain = {sType = .SurfaceSourceXlibWindow}, display = display, window = u64(window_id),
+            }
+            descriptor := wgpu.SurfaceDescriptor{nextInChain = &amp;source.chain, label = &quot;SDL X11 surface&quot;}
+            result.surface = wgpu.InstanceCreateSurface(instance, &amp;descriptor)
+        case:
+            fmt.eprintln(&quot;Unsupported SDL video driver:&quot;, sdl.GetCurrentVideoDriver())
+        }
+    } else {
+        #panic(&quot;This book targets macOS, Windows, and Linux desktop windows&quot;)
+    }
+    return result
+}
+
+platform_surface_destroy :: proc(platform: ^Platform_Surface) {
+    if platform.surface != nil { wgpu.SurfaceRelease(platform.surface) }
+    when ODIN_OS == .Darwin {
+        if platform.metal_view != nil { sdl.Metal_DestroyView(platform.metal_view) }
+    }
+    platform^ = {}
+}
+</code></pre></figure></details><details class="source-file"><summary>src/gpu.odin <span>173 lines</span></summary><p><a download href="../checkpoints/16/src/gpu.odin">Download this checkpoint’s src/gpu.odin</a></p><figure class="code-block"><figcaption>checkpoints/16/src/gpu.odin · complete file</figcaption><pre><code class="language-odin" data-source="checkpoints/16/src/gpu.odin">package character
+import &quot;core:fmt&quot;
+import &quot;core:c&quot;
+import &quot;base:runtime&quot;
+import &quot;base:intrinsics&quot;
+import sdl &quot;vendor:sdl3&quot;
+import wgpu &quot;vendor:wgpu&quot;
+
+GPU :: struct {
+    instance: wgpu.Instance,
+    platform: Platform_Surface,
+    adapter: wgpu.Adapter,
+    device: wgpu.Device,
+    queue: wgpu.Queue,
+    adapter_done, device_done: bool,
+    config: wgpu.SurfaceConfiguration,
+    configured, dirty: bool,
+    max_texture_dimension: u32,
+}
+
+gpu_init :: proc(gpu: ^GPU, window: ^sdl.Window) -&gt; bool {
+    gpu.instance = wgpu.CreateInstance(nil)
+    if gpu.instance == nil {
+        fmt.eprintln(&quot;Cannot create a WebGPU instance&quot;)
+        return false
+    }
+    gpu.platform = platform_surface_create(gpu.instance, window)
+    if gpu.platform.surface == nil {
+        fmt.eprintln(&quot;Cannot connect WebGPU to the SDL window&quot;)
+        return false
+    }
+    if !gpu_request_device(gpu) { return false }
+    if !gpu_choose_surface(gpu) { return false }
+    gpu.dirty = true
+    _ = gpu_refresh_surface(gpu, window)
+    return !gpu_failed()
+}
+
+gpu_destroy :: proc(gpu: ^GPU) {
+    if gpu.device != nil { _ = wgpu.DevicePoll(gpu.device, true, nil) }
+    if gpu.configured { wgpu.SurfaceUnconfigure(gpu.platform.surface) }
+    if gpu.queue != nil { wgpu.QueueRelease(gpu.queue) }
+    if gpu.device != nil { wgpu.DeviceRelease(gpu.device) }
+    if gpu.adapter != nil { wgpu.AdapterRelease(gpu.adapter) }
+    platform_surface_destroy(&amp;gpu.platform)
+    if gpu.instance != nil { wgpu.InstanceRelease(gpu.instance) }
+    gpu^ = {}
+}
+
+// Process-lifetime storage: native diagnostic callbacks may arrive on other threads.
+gpu_fault: bool
+
+gpu_failed :: proc() -&gt; bool { return intrinsics.atomic_load(&amp;gpu_fault) }
+
+adapter_ready :: proc &quot;c&quot; (status: wgpu.RequestAdapterStatus, adapter: wgpu.Adapter,
+                          message: wgpu.StringView, userdata1, userdata2: rawptr) {
+    context = runtime.default_context()
+    gpu := cast(^GPU)userdata1
+    gpu.adapter_done = true
+    if status == .Success { gpu.adapter = adapter }
+    else { fmt.eprintln(&quot;Adapter request:&quot;, status, message) }
+}
+
+device_ready :: proc &quot;c&quot; (status: wgpu.RequestDeviceStatus, device: wgpu.Device,
+                         message: wgpu.StringView, userdata1, userdata2: rawptr) {
+    context = runtime.default_context()
+    gpu := cast(^GPU)userdata1
+    gpu.device_done = true
+    if status == .Success { gpu.device = device }
+    else { fmt.eprintln(&quot;Device request:&quot;, status, message) }
+}
+
+device_lost :: proc &quot;c&quot; (device: ^wgpu.Device, reason: wgpu.DeviceLostReason,
+                        message: wgpu.StringView, userdata1, userdata2: rawptr) {
+    context = runtime.default_context()
+    if reason == .Destroyed { return }
+    fmt.eprintln(&quot;Device lost:&quot;, reason, message)
+    intrinsics.atomic_store(&amp;gpu_fault, true)
+}
+
+uncaptured_error :: proc &quot;c&quot; (device: ^wgpu.Device, error_type: wgpu.ErrorType,
+                             message: wgpu.StringView, userdata1, userdata2: rawptr) {
+    context = runtime.default_context()
+    fmt.eprintln(&quot;WebGPU error:&quot;, error_type, message)
+    intrinsics.atomic_store(&amp;gpu_fault, true)
+}
+
+gpu_request_device :: proc(gpu: ^GPU) -&gt; bool {
+    options := wgpu.RequestAdapterOptions{
+        compatibleSurface = gpu.platform.surface,
+        powerPreference = .HighPerformance,
+        featureLevel = .Core,
+    }
+    _ = wgpu.InstanceRequestAdapter(gpu.instance, &amp;options, {
+        mode = .AllowSpontaneos, callback = adapter_ready, userdata1 = gpu,
+    })
+    // Verified wgpu-native 29.0.1.1 behavior: these two request callbacks run inline.
+    // Do not carry this assumption to Dawn or to a later native implementation.
+    assert(gpu.adapter_done, &quot;Pinned wgpu-native request contract changed&quot;)
+    if gpu.adapter == nil { return false }
+    descriptor := wgpu.DeviceDescriptor{
+        label = &quot;2D device&quot;, defaultQueue = {label = &quot;2D queue&quot;},
+        deviceLostCallbackInfo = {mode = .AllowSpontaneos, callback = device_lost},
+        uncapturedErrorCallbackInfo = {callback = uncaptured_error},
+    }
+    _ = wgpu.AdapterRequestDevice(gpu.adapter, &amp;descriptor, {
+        mode = .AllowSpontaneos, callback = device_ready, userdata1 = gpu,
+    })
+    assert(gpu.device_done, &quot;Pinned wgpu-native request contract changed&quot;)
+    if gpu.device == nil { return false }
+    gpu.queue = wgpu.DeviceGetQueue(gpu.device)
+    return gpu.queue != nil &amp;&amp; !gpu_failed()
+}
+
+gpu_choose_surface :: proc(gpu: ^GPU) -&gt; bool {
+    caps, status := wgpu.SurfaceGetCapabilities(gpu.platform.surface, gpu.adapter)
+    if status != .Success {
+        fmt.eprintln(&quot;Surface capabilities unavailable:&quot;, status)
+        return false
+    }
+    defer wgpu.SurfaceCapabilitiesFreeMembers(caps)
+    format: wgpu.TextureFormat = .Undefined
+    for candidate in caps.formats[:caps.formatCount] {
+        if candidate == .BGRA8UnormSrgb || candidate == .RGBA8UnormSrgb {
+            format = candidate
+            break
+        }
+    }
+    if format == .Undefined || !(.RenderAttachment in caps.usages) {
+        fmt.eprintln(&quot;This example needs an sRGB RGBA/BGRA renderable surface&quot;)
+        return false
+    }
+    fifo := false
+    for mode in caps.presentModes[:caps.presentModeCount] {
+        if mode == .Fifo { fifo = true }
+    }
+    if !fifo { fmt.eprintln(&quot;Surface does not offer FIFO presentation&quot;); return false }
+    alpha: wgpu.CompositeAlphaMode = .Auto
+    for mode in caps.alphaModes[:caps.alphaModeCount] {
+        if mode == .Opaque { alpha = .Opaque }
+    }
+    limits, limit_status := wgpu.DeviceGetLimits(gpu.device)
+    if limit_status != .Success { return false }
+    gpu.max_texture_dimension = limits.maxTextureDimension2D
+    gpu.config = {
+        device = gpu.device, format = format, usage = {.RenderAttachment},
+        presentMode = .Fifo, alphaMode = alpha,
+    }
+    fmt.println(&quot;Surface format:&quot;, format)
+    return true
+}
+
+gpu_refresh_surface :: proc(gpu: ^GPU, window: ^sdl.Window) -&gt; bool {
+    if .MINIMIZED in sdl.GetWindowFlags(window) { return false }
+    width, height: c.int
+    if !sdl.GetWindowSizeInPixels(window, &amp;width, &amp;height) {
+        fmt.eprintln(&quot;Drawable size:&quot;, sdl.GetError())
+        intrinsics.atomic_store(&amp;gpu_fault, true)
+        return false
+    }
+    if width &lt;= 0 || height &lt;= 0 { return false }
+    if u32(width) &gt; gpu.max_texture_dimension || u32(height) &gt; gpu.max_texture_dimension {
+        return false
+    }
+    if gpu.dirty || !gpu.configured || gpu.config.width != u32(width) || gpu.config.height != u32(height) {
+        gpu.config.width = u32(width)
+        gpu.config.height = u32(height)
+        wgpu.SurfaceConfigure(gpu.platform.surface, &amp;gpu.config)
+        gpu.configured = !gpu_failed()
+        gpu.dirty = false
+    }
+    return gpu.configured
+}
+</code></pre></figure></details><details class="source-file"><summary>src/renderer.odin <span>182 lines</span></summary><p><a download href="../checkpoints/16/src/renderer.odin">Download this checkpoint’s src/renderer.odin</a></p><figure class="code-block"><figcaption>checkpoints/16/src/renderer.odin · complete file</figcaption><pre><code class="language-odin" data-source="checkpoints/16/src/renderer.odin">package character
+import &quot;core:fmt&quot;
+import sdl &quot;vendor:sdl3&quot;
+import wgpu &quot;vendor:wgpu&quot;
+
+renderer_frame :: proc(gpu: ^GPU, window: ^sdl.Window, renderer: ^Renderer,
+                       position, size: [2]f32, tint: [4]f32, view_size: [2]f32) -&gt; bool {
+    if !gpu_refresh_surface(gpu, window) { sdl.Delay(10); return !gpu_failed() }
+    uniforms := Uniforms{
+        position = position, size = size,
+        view_size = view_size,
+        camera = {0, 0}, tint = tint,
+    }
+    wgpu.QueueWriteBuffer(gpu.queue, renderer.uniform_buffer, 0, &amp;uniforms, size_of(uniforms))
+    frame := wgpu.SurfaceGetCurrentTexture(gpu.platform.surface)
+    // Release any returned handle on every exit path, including a failed acquisition.
+    defer if frame.texture != nil { wgpu.TextureRelease(frame.texture) }
+    #partial switch frame.status {
+    case .SuccessOptimal:
+    case .SuccessSuboptimal: gpu.dirty = true
+    case .Timeout, .Occluded: sdl.Delay(10); return true
+    case .Outdated: gpu.dirty = true; sdl.Delay(10); return true
+    case .Lost:
+        fmt.eprintln(&quot;Surface lost; close and restart this small example&quot;)
+        return false
+    case:
+        fmt.eprintln(&quot;Surface acquisition:&quot;, frame.status)
+        return false
+    }
+    if frame.texture == nil { fmt.eprintln(&quot;Successful acquisition without a texture&quot;); return false }
+    view := wgpu.TextureCreateView(frame.texture, nil)
+    if view == nil { return false }
+    defer wgpu.TextureViewRelease(view)
+    encoder := wgpu.DeviceCreateCommandEncoder(gpu.device, &amp;wgpu.CommandEncoderDescriptor{label = &quot;frame&quot;})
+    if encoder == nil { return false }
+    defer wgpu.CommandEncoderRelease(encoder)
+    attachment := wgpu.RenderPassColorAttachment{
+        view = view, depthSlice = wgpu.DEPTH_SLICE_UNDEFINED,
+        loadOp = .Clear, storeOp = .Store, clearValue = {0.018, 0.028, 0.048, 1},
+    }
+    pass_descriptor := wgpu.RenderPassDescriptor{
+        label = &quot;window color pass&quot;, colorAttachmentCount = 1, colorAttachments = &amp;attachment,
+    }
+    pass := wgpu.CommandEncoderBeginRenderPass(encoder, &amp;pass_descriptor)
+    if pass == nil { return false }
+    defer wgpu.RenderPassEncoderRelease(pass)
+    wgpu.RenderPassEncoderSetPipeline(pass, renderer.pipeline)
+    wgpu.RenderPassEncoderSetBindGroup(pass, 0, renderer.bind_group)
+    wgpu.RenderPassEncoderSetVertexBuffer(pass, 0, renderer.vertex_buffer, 0, size_of(VERTICES))
+    wgpu.RenderPassEncoderSetIndexBuffer(pass, renderer.index_buffer, .Uint16, 0, size_of(INDICES))
+    wgpu.RenderPassEncoderDrawIndexed(pass, 6, 1, 0, 0, 0)
+    wgpu.RenderPassEncoderEnd(pass)
+    commands := wgpu.CommandEncoderFinish(encoder, &amp;wgpu.CommandBufferDescriptor{label = &quot;finished frame&quot;})
+    if commands == nil { return false }
+    defer wgpu.CommandBufferRelease(commands)
+    if gpu_failed() { return false }
+    wgpu.QueueSubmit(gpu.queue, []wgpu.CommandBuffer{commands})
+    if wgpu.SurfacePresent(gpu.platform.surface) != .Success {
+        fmt.eprintln(&quot;Surface presentation failed&quot;)
+        return false
+    }
+    return !gpu_failed()
+}
+
+Vertex :: struct {
+    position: [2]f32,
+    color: [4]f32,
+}
+#assert(size_of(Vertex) == 24)
+#assert(offset_of(Vertex, position) == 0)
+#assert(offset_of(Vertex, color) == 8)
+
+VERTICES :: [4]Vertex{
+    {{0, 0}, {0.12, 0.78, 0.55, 1}},
+    {{1, 0}, {0.12, 0.78, 0.55, 1}},
+    {{1, 1}, {0.12, 0.78, 0.55, 1}},
+    {{0, 1}, {0.12, 0.78, 0.55, 1}},
+}
+INDICES :: [6]u16{0, 1, 2, 0, 2, 3}
+
+Uniforms :: struct #align(16) {
+    position: [2]f32,
+    size: [2]f32,
+    view_size: [2]f32,
+    camera: [2]f32,
+    tint: [4]f32,
+}
+#assert(size_of(Uniforms) == 48)
+#assert(offset_of(Uniforms, position) == 0)
+#assert(offset_of(Uniforms, size) == 8)
+#assert(offset_of(Uniforms, view_size) == 16)
+#assert(offset_of(Uniforms, camera) == 24)
+#assert(offset_of(Uniforms, tint) == 32)
+
+Renderer :: struct {
+    pipeline: wgpu.RenderPipeline,
+    vertex_buffer: wgpu.Buffer,
+    index_buffer: wgpu.Buffer,
+    uniform_buffer: wgpu.Buffer,
+    bind_group: wgpu.BindGroup,
+}
+
+renderer_init :: proc(renderer: ^Renderer, gpu: ^GPU) -&gt; bool {
+    renderer.vertex_buffer = wgpu.DeviceCreateBuffer(gpu.device, &amp;wgpu.BufferDescriptor{
+        label = &quot;character vertices&quot;, size = size_of(VERTICES), usage = {.Vertex, .CopyDst},
+    })
+    if renderer.vertex_buffer == nil { return false }
+    vertices := VERTICES
+    wgpu.QueueWriteBuffer(gpu.queue, renderer.vertex_buffer, 0, &amp;vertices, size_of(vertices))
+    renderer.index_buffer = wgpu.DeviceCreateBuffer(gpu.device, &amp;wgpu.BufferDescriptor{
+        label = &quot;quad indices&quot;, size = size_of(INDICES), usage = {.Index, .CopyDst},
+    })
+    if renderer.index_buffer == nil { return false }
+    indices := INDICES
+    wgpu.QueueWriteBuffer(gpu.queue, renderer.index_buffer, 0, &amp;indices, size_of(indices))
+    source := wgpu.ShaderSourceWGSL{
+        chain = {sType = .ShaderSourceWGSL}, code = #load(&quot;../shaders/character.wgsl&quot;, string),
+    }
+    shader := wgpu.DeviceCreateShaderModule(gpu.device, &amp;wgpu.ShaderModuleDescriptor{
+        label = &quot;character WGSL&quot;, nextInChain = &amp;source.chain,
+    })
+    if shader == nil { return false }
+    defer wgpu.ShaderModuleRelease(shader)
+    if gpu_failed() { return false }
+    renderer.uniform_buffer = wgpu.DeviceCreateBuffer(gpu.device, &amp;wgpu.BufferDescriptor{
+        label = &quot;character uniforms&quot;, size = size_of(Uniforms), usage = {.Uniform, .CopyDst},
+    })
+    if renderer.uniform_buffer == nil { return false }
+    binding_layout := wgpu.BindGroupLayoutEntry{
+        binding = 0, visibility = {.Vertex},
+        buffer = {type = .Uniform, minBindingSize = size_of(Uniforms)},
+    }
+    group_layout := wgpu.DeviceCreateBindGroupLayout(gpu.device, &amp;wgpu.BindGroupLayoutDescriptor{
+        label = &quot;character resource interface&quot;, entryCount = 1, entries = &amp;binding_layout,
+    })
+    if group_layout == nil { return false }
+    defer wgpu.BindGroupLayoutRelease(group_layout)
+    entry := wgpu.BindGroupEntry{binding = 0, buffer = renderer.uniform_buffer, offset = 0, size = size_of(Uniforms)}
+    renderer.bind_group = wgpu.DeviceCreateBindGroup(gpu.device, &amp;wgpu.BindGroupDescriptor{
+        label = &quot;character resources&quot;, layout = group_layout, entryCount = 1, entries = &amp;entry,
+    })
+    if renderer.bind_group == nil { return false }
+    layout := wgpu.DeviceCreatePipelineLayout(gpu.device, &amp;wgpu.PipelineLayoutDescriptor{
+        label = &quot;character pipeline interface&quot;, bindGroupLayoutCount = 1, bindGroupLayouts = &amp;group_layout,
+    })
+    if layout == nil { return false }
+    defer wgpu.PipelineLayoutRelease(layout)
+    blend := wgpu.BlendState{
+        color = {operation = .Add, srcFactor = .SrcAlpha, dstFactor = .OneMinusSrcAlpha},
+        alpha = {operation = .Add, srcFactor = .One, dstFactor = .OneMinusSrcAlpha},
+    }
+    target := wgpu.ColorTargetState{
+        format = gpu.config.format, blend = &amp;blend, writeMask = {.Red, .Green, .Blue, .Alpha},
+    }
+    fragment := wgpu.FragmentState{module = shader, entryPoint = &quot;fs_main&quot;, targetCount = 1, targets = &amp;target}
+    attributes := [2]wgpu.VertexAttribute{
+        {format = .Float32x2, offset = u64(offset_of(Vertex, position)), shaderLocation = 0},
+        {format = .Float32x4, offset = u64(offset_of(Vertex, color)), shaderLocation = 1},
+    }
+    vertex_layout := wgpu.VertexBufferLayout{
+        arrayStride = size_of(Vertex), stepMode = .Vertex,
+        attributeCount = len(attributes), attributes = raw_data(attributes[:]),
+    }
+    descriptor := wgpu.RenderPipelineDescriptor{
+        label = &quot;character pipeline&quot;, layout = layout,
+        vertex = {module = shader, entryPoint = &quot;vs_main&quot;, bufferCount = 1, buffers = &amp;vertex_layout},
+        fragment = &amp;fragment,
+        primitive = {topology = .TriangleList, frontFace = .CCW, cullMode = .None},
+        multisample = {count = 1, mask = 0xffffffff},
+    }
+    renderer.pipeline = wgpu.DeviceCreateRenderPipeline(gpu.device, &amp;descriptor)
+    return renderer.pipeline != nil &amp;&amp; !gpu_failed()
+}
+
+renderer_destroy :: proc(renderer: ^Renderer) {
+    if renderer.bind_group != nil { wgpu.BindGroupRelease(renderer.bind_group) }
+    if renderer.uniform_buffer != nil { wgpu.BufferRelease(renderer.uniform_buffer) }
+    if renderer.index_buffer != nil { wgpu.BufferRelease(renderer.index_buffer) }
+    if renderer.vertex_buffer != nil { wgpu.BufferRelease(renderer.vertex_buffer) }
+    if renderer.pipeline != nil { wgpu.RenderPipelineRelease(renderer.pipeline) }
+    renderer^ = {}
+}
+</code></pre></figure></details><details class="source-file"><summary>shaders/character.wgsl <span>38 lines</span></summary><p><a download href="../checkpoints/16/shaders/character.wgsl">Download this checkpoint’s shaders/character.wgsl</a></p><figure class="code-block"><figcaption>checkpoints/16/shaders/character.wgsl · complete file</figcaption><pre><code class="language-wgsl" data-source="checkpoints/16/shaders/character.wgsl">struct Uniforms {
+    position: vec2f,
+    size: vec2f,
+    view_size: vec2f,
+    camera: vec2f,
+    tint: vec4f,
+}
+@group(0) @binding(0) var&lt;uniform&gt; uniforms: Uniforms;
+
+struct Vertex_Out {
+    @builtin(position) clip_position: vec4f,
+    @location(0) color: vec4f,
+    @location(1) local_position: vec2f,
+}
+
+@vertex
+fn vs_main(@location(0) position: vec2f, @location(1) color: vec4f) -&gt; Vertex_Out {
+    var out: Vertex_Out;
+    let pixel = uniforms.position + position * uniforms.size - uniforms.camera;
+    let ndc = vec2f(2.0 * pixel.x / uniforms.view_size.x - 1.0,
+                   1.0 - 2.0 * pixel.y / uniforms.view_size.y);
+    out.clip_position = vec4f(ndc, 0.0, 1.0);
+    out.color = color * uniforms.tint;
+    out.local_position = position;
+    return out;
+}
+
+@fragment
+fn fs_main(in: Vertex_Out) -&gt; @location(0) vec4f {
+    let p = in.local_position;
+    let left_eye = p.x &gt; 0.22 &amp;&amp; p.x &lt; 0.36 &amp;&amp; p.y &gt; 0.25 &amp;&amp; p.y &lt; 0.39;
+    let right_eye = p.x &gt; 0.64 &amp;&amp; p.x &lt; 0.78 &amp;&amp; p.y &gt; 0.25 &amp;&amp; p.y &lt; 0.39;
+    let mouth = p.x &gt; 0.35 &amp;&amp; p.x &lt; 0.65 &amp;&amp; p.y &gt; 0.62 &amp;&amp; p.y &lt; 0.69;
+    if left_eye || right_eye || mouth {
+        return vec4f(0.012, 0.025, 0.040, in.color.a);
+    }
+    return in.color;
+}
+</code></pre></figure></details><details class="source-file"><summary>src/game.odin <span>31 lines</span></summary><p><a download href="../checkpoints/16/src/game.odin">Download this checkpoint’s src/game.odin</a></p><figure class="code-block"><figcaption>checkpoints/16/src/game.odin · complete file</figcaption><pre><code class="language-odin" data-source="checkpoints/16/src/game.odin">package character
+import &quot;core:math&quot;
+import sdl &quot;vendor:sdl3&quot;
+
+Game :: struct {
+    position: [2]f32,
+    size: [2]f32,
+    tint: [4]f32,
+    speed: f32,
+}
+
+read_movement :: proc(window: ^sdl.Window) -&gt; [2]f32 {
+    if !(.INPUT_FOCUS in sdl.GetWindowFlags(window)) { return {} }
+    keys := sdl.GetKeyboardState(nil)
+    direction: [2]f32
+    if keys[sdl.Scancode.D] || keys[sdl.Scancode.RIGHT] { direction.x += 1 }
+    if keys[sdl.Scancode.A] || keys[sdl.Scancode.LEFT]  { direction.x -= 1 }
+    if keys[sdl.Scancode.S] || keys[sdl.Scancode.DOWN]  { direction.y += 1 }
+    if keys[sdl.Scancode.W] || keys[sdl.Scancode.UP]    { direction.y -= 1 }
+    return direction
+}
+
+game_update :: proc(game: ^Game, direction: [2]f32, dt: f32, view_size: [2]f32) {
+    direction := direction
+    length_squared := direction.x * direction.x + direction.y * direction.y
+    if length_squared &gt; 0 { direction /= math.sqrt(length_squared) }
+    game.position += direction * game.speed * dt
+    // If the window is smaller than the character, anchor that axis at zero.
+    game.position.x = clamp(game.position.x, 0, max(f32(0), view_size.x - game.size.x))
+    game.position.y = clamp(game.position.y, 0, max(f32(0), view_size.y - game.size.y))
+}
+</code></pre></figure></details></section><nav class="chapter-navigation" aria-label="Chapter navigation"><a href="../chapters/15-movement-in-seconds.html"><span>← Previous Chapter</span><small>Movement measured in seconds</small></a><a href="../contents.html">Contents</a><a href="../chapters/17-lifetimes-and-debugging.html"><span>Next Chapter →</span><small>Lifetimes, failures, and debugging</small></a></nav></article></main><footer class="page-footer"><span>Native Pixels · September 2026 edition</span><a href="../appendix/sources.html">Sources &amp; verification</a><a href="../LICENSE">MIT License</a><a href="#top">Back to top ↑</a></footer></div></body></html>

@@ -1,0 +1,46 @@
+--- before/src/renderer.odin
++++ after/src/renderer.odin
+@@ -145,7 +145,13 @@
+     })
+     if layout == nil { return false }
+     defer wgpu.PipelineLayoutRelease(layout)
+-    target := wgpu.ColorTargetState{format = gpu.config.format, writeMask = {.Red, .Green, .Blue, .Alpha}}
++    blend := wgpu.BlendState{
++        color = {operation = .Add, srcFactor = .SrcAlpha, dstFactor = .OneMinusSrcAlpha},
++        alpha = {operation = .Add, srcFactor = .One, dstFactor = .OneMinusSrcAlpha},
++    }
++    target := wgpu.ColorTargetState{
++        format = gpu.config.format, blend = &blend, writeMask = {.Red, .Green, .Blue, .Alpha},
++    }
+     fragment := wgpu.FragmentState{module = shader, entryPoint = "fs_main", targetCount = 1, targets = &target}
+     attributes := [2]wgpu.VertexAttribute{
+         {format = .Float32x2, offset = u64(offset_of(Vertex, position)), shaderLocation = 0},
+--- before/shaders/character.wgsl
++++ after/shaders/character.wgsl
+@@ -10,6 +10,7 @@
+ struct Vertex_Out {
+     @builtin(position) clip_position: vec4f,
+     @location(0) color: vec4f,
++    @location(1) local_position: vec2f,
+ }
+ 
+ @vertex
+@@ -20,10 +21,18 @@
+                    1.0 - 2.0 * pixel.y / uniforms.view_size.y);
+     out.clip_position = vec4f(ndc, 0.0, 1.0);
+     out.color = color * uniforms.tint;
++    out.local_position = position;
+     return out;
+ }
+ 
+ @fragment
+ fn fs_main(in: Vertex_Out) -> @location(0) vec4f {
++    let p = in.local_position;
++    let left_eye = p.x > 0.22 && p.x < 0.36 && p.y > 0.25 && p.y < 0.39;
++    let right_eye = p.x > 0.64 && p.x < 0.78 && p.y > 0.25 && p.y < 0.39;
++    let mouth = p.x > 0.35 && p.x < 0.65 && p.y > 0.62 && p.y < 0.69;
++    if left_eye || right_eye || mouth {
++        return vec4f(0.012, 0.025, 0.040, in.color.a);
++    }
+     return in.color;
+ }

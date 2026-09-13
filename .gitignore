@@ -1,0 +1,55 @@
+# Generated builds, native test harnesses, and release archives
+/build/
+/dist/
+/_site/
+/coverage/
+/node_modules/
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+
+# Compiled native outputs and debugging symbols
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.so.*
+*.dylib
+*.dll
+*.exe
+*.pdb
+*.dSYM/
+*.app/
+/native-pixels
+/checkpoints/**/src.bin
+/project/src.bin
+
+# Local dependencies, caches, and logs
+/.cache/
+/.odin-cache/
+/sdl-download/
+*.log
+*.tmp
+*.swp
+*.swo
+*~
+
+# Credentials and machine-specific configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+/.agents/
+/.codex/
+/.idea/
+/.vscode/
+
+# Local planning notes and operating-system metadata
+/PLAN.md
+.DS_Store
+._*
+Thumbs.db
+Desktop.ini

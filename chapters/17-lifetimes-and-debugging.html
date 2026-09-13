@@ -1,0 +1,579 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="description" content="A useful renderer has a reason for every object that survives a frame—and every object that does not."><meta name="author" content="Rabin Gaire"><title>Lifetimes, failures, and debugging — Native Pixels</title><link rel="canonical" href="https://rabingaire.com.np/native-pixels/chapters/17-lifetimes-and-debugging.html"><link rel="sitemap" type="application/xml" href="../sitemap.xml"><meta property="og:type" content="article"><meta property="og:site_name" content="Native Pixels"><meta property="og:locale" content="en_US"><meta property="og:title" content="Lifetimes, failures, and debugging — Native Pixels"><meta property="og:description" content="A useful renderer has a reason for every object that survives a frame—and every object that does not."><meta property="og:url" content="https://rabingaire.com.np/native-pixels/chapters/17-lifetimes-and-debugging.html"><meta property="og:image" content="https://rabingaire.com.np/native-pixels/assets/room-gameplay.png"><meta property="og:image:alt" content="Pixel-art room rendered with native WebGPU, Odin, and SDL3"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Lifetimes, failures, and debugging — Native Pixels"><meta name="twitter:description" content="A useful renderer has a reason for every object that survives a frame—and every object that does not."><meta name="twitter:image" content="https://rabingaire.com.np/native-pixels/assets/room-gameplay.png"><script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Book","@id":"https://rabingaire.com.np/native-pixels/#book","name":"Native Pixels","url":"https://rabingaire.com.np/native-pixels/","description":"Learn native 2D WebGPU with Odin and SDL3 in 23 chapters. Build a pixel-art game with sprite animation, collision, and complete runnable source.","inLanguage":"en","isAccessibleForFree":true,"author":{"@type":"Person","name":"Rabin Gaire"},"license":"https://rabingaire.com.np/native-pixels/LICENSE","image":"https://rabingaire.com.np/native-pixels/assets/room-gameplay.png"},{"@type":"Chapter","@id":"https://rabingaire.com.np/native-pixels/chapters/17-lifetimes-and-debugging.html","url":"https://rabingaire.com.np/native-pixels/chapters/17-lifetimes-and-debugging.html","name":"Lifetimes, failures, and debugging","description":"A useful renderer has a reason for every object that survives a frame—and every object that does not.","inLanguage":"en","isPartOf":{"@id":"https://rabingaire.com.np/native-pixels/#book"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Native Pixels","item":"https://rabingaire.com.np/native-pixels/"},{"@type":"ListItem","position":2,"name":"Lifetimes, failures, and debugging","item":"https://rabingaire.com.np/native-pixels/chapters/17-lifetimes-and-debugging.html"}]}]}</script><script>try{const theme=localStorage.getItem("native-pixels-theme");if(theme==="light"||theme==="dark")document.documentElement.dataset.theme=theme;}catch{}</script><link rel="stylesheet" href="../assets/style.css"><script defer src="../assets/book.js"></script></head>
+<body id="top" class="reading-page"><a class="skip-link" href="#main">Skip to content</a><div class="reading-progress" aria-hidden="true"></div><aside class="book-rail"><a class="wordmark" href="../index.html"><span class="brand-mark" aria-hidden="true">▰</span><span>Native Pixels<span class="edition">ODIN / SDL3 / WEBGPU</span></span></a><nav class="rail-primary" aria-label="Book navigation"><a class="rail-link" href="../index.html"><span class="rail-label">Overview</span></a><a class="rail-link" href="../contents.html"><span class="rail-label">All chapters</span></a><a class="rail-link" href="../appendix/build.html"><span class="rail-label">Build the game</span></a></nav><div class="rail-context"><p class="rail-kicker">Chapter 17</p><a class="rail-title" href="#top">Lifetimes, failures, and debugging</a><nav class="rail-sections" aria-label="Chapter sections"><a class="rail-link numbered" href="#section-1"><span class="rail-index">17.1</span><span class="rail-label">Reason about failure one acquisition at a time</span></a><a class="rail-link numbered" href="#section-2"><span class="rail-index">17.2</span><span class="rail-label">Two kinds of lifetime must agree</span></a><a class="rail-link numbered" href="#section-3"><span class="rail-index">17.3</span><span class="rail-label">Read the cleanup we already wrote</span></a><a class="rail-link numbered" href="#section-4"><span class="rail-index">17.4</span><span class="rail-label">A failure policy is part of the implementation</span></a><a class="rail-link numbered" href="#section-5"><span class="rail-index">17.5</span><span class="rail-label">Debug from the last fact you can prove</span></a><a class="rail-link numbered" href="#section-6"><span class="rail-index">17.6</span><span class="rail-label">An orderly frame is the cheapest lifetime check</span></a><a class="rail-link numbered" href="#section-7"><span class="rail-index">17.7</span><span class="rail-label">When this work happens</span></a><a class="rail-link numbered" href="#section-8"><span class="rail-index">17.8</span><span class="rail-label">Read the symptom, test a hypothesis</span></a><a class="rail-link numbered" href="#section-9"><span class="rail-index">17.9</span><span class="rail-label">Experiments</span></a><a class="rail-link numbered" href="#section-10"><span class="rail-index">17.10</span><span class="rail-label">What we have now</span></a><a class="rail-link numbered" href="#section-11"><span class="rail-index">17.11</span><span class="rail-label">Challenges</span></a><a class="rail-link numbered" href="#section-12"><span class="rail-index">17.12</span><span class="rail-label">Exact code changes and runnable checkpoint</span></a></nav><div class="rail-prev-next"><a href="../chapters/16-color-alpha-character.html">← Previous</a><a href="../chapters/18-from-main-to-pixels.html">Next →</a></div></div><div class="rail-reference"><p class="rail-kicker">Keep nearby</p><nav aria-label="Reference pages"><a class="rail-link" href="../appendix/final-source.html"><span class="rail-label">Complete final source</span></a><a class="rail-link" href="../appendix/glossary.html"><span class="rail-label">Glossary</span></a><a class="rail-link" href="../appendix/cheat-sheets.html"><span class="rail-label">Initialization, frame, and lifetime sheets</span></a><a class="rail-link" href="../appendix/sources.html"><span class="rail-label">Sources and verification record</span></a></nav></div></aside><div class="page-shell"><header class="topbar"><div class="breadcrumb"><a href="../index.html">Native Pixels</a><span aria-hidden="true">/</span><span>Chapter 17</span></div><div class="reader-controls"><button type="button" class="theme-toggle" hidden aria-label="Change color theme">Theme</button><button type="button" class="focus-toggle" hidden aria-pressed="false">Focus</button><a class="mobile-contents" href="../contents.html">Contents</a></div></header><main id="main" tabindex="-1"><article class="chapter"><header class="chapter-header"><span class="chapter-display-number" aria-hidden="true">17</span><p class="eyebrow">IV · Move one character <span>Chapter 17 / 23</span></p><h1>Lifetimes, failures, and debugging</h1><p class="deck">A useful renderer has a reason for every object that survives a frame—and every object that does not.</p><p class="reading-meta">8 min read + implementation · checkpoint 17</p></header><aside class="callout outcome"><strong>At the end of this chapter</strong><p>The completed moving-character program is unchanged; we audit its ownership and failure policies.</p></aside><nav class="on-this-page" aria-label="On this page"><details><summary>In this chapter</summary><ol><li><a href="#section-1"><span>17.1</span> Reason about failure one acquisition at a time</a></li><li><a href="#section-2"><span>17.2</span> Two kinds of lifetime must agree</a></li><li><a href="#section-3"><span>17.3</span> Read the cleanup we already wrote</a></li><li><a href="#section-4"><span>17.4</span> A failure policy is part of the implementation</a></li><li><a href="#section-5"><span>17.5</span> Debug from the last fact you can prove</a></li><li><a href="#section-6"><span>17.6</span> An orderly frame is the cheapest lifetime check</a></li><li><a href="#section-7"><span>17.7</span> When this work happens</a></li><li><a href="#section-8"><span>17.8</span> Read the symptom, test a hypothesis</a></li><li><a href="#section-9"><span>17.9</span> Experiments</a></li><li><a href="#section-10"><span>17.10</span> What we have now</a></li><li><a href="#section-11"><span>17.11</span> Challenges</a></li><li><a href="#section-12"><span>17.12</span> Exact code changes and runnable checkpoint</a></li></ol></details></nav><section class="learning-guide"><h2 id="section-1"><span class="section-number" aria-hidden="true">17.1</span>Reason about failure one acquisition at a time<a class="heading-link" href="#section-1" aria-label="Link to Reason about failure one acquisition at a time">#</a></h2><p>Consider initialization that creates a vertex buffer but fails before creating an index buffer. Cleanup must release the vertex buffer and skip the absent index buffer. A zero-initialized owner plus conditional releases makes this partial state representable. Register cleanup early enough that a helper returning false still unwinds everything it already created.</p><p>Now consider a frame that acquires a texture but fails to create a view. The texture still needs release. Defers belong immediately after successful acquisitions, before later operations can return. This local reasoning is more reliable than one long success-only cleanup list at the bottom of a procedure.</p><p>A recoverable skip means this attempt cannot produce an image but a later attempt may succeed. Device loss means the resources owned by that device cannot simply be assumed usable. The book deliberately exits on that failure. Retrying surface configuration is not an implementation of complete device recreation.</p></section><section><h2 id="section-2"><span class="section-number" aria-hidden="true">17.2</span>Two kinds of lifetime must agree<a class="heading-link" href="#section-2" aria-label="Link to Two kinds of lifetime must agree">#</a></h2><p>The application owns native references. The implementation owns backend objects and retains what submitted work needs. These lifetimes overlap, but are not identical. A local pointer variable going out of scope does not automatically release a native object. Calling Release decrements an application reference; it is not a synchronous command that frees all backend memory immediately.</p><p>Destroy has a different meaning for resources such as buffers: it explicitly invalidates the resource for future use and schedules its storage for reclamation when safe. It is not a substitute for releasing the native handle. This program generally uses Release when its owner is finished. It never calls TextureDestroy on a borrowed-current presentation image in place of presenting and releasing it.</p><div class="table-scroll"><table><thead><tr><th scope="col">Resource</th><th scope="col">Our lifetime</th><th scope="col">Cleanup boundary</th></tr></thead><tbody><tr><td>SDL window</td><td>Application</td><td>After GPU/surface/view teardown</td></tr><tr><td>Metal view on macOS</td><td>Window’s surface lifetime</td><td>After surface release, before window destruction</td></tr><tr><td>Instance, adapter, device, queue</td><td>Application</td><td>GPU owner cleanup</td></tr><tr><td>Surface</td><td>Window</td><td>Unconfigure, then release</td></tr><tr><td>Shader module</td><td>Renderer initialization</td><td>After pipeline creation</td></tr><tr><td>Bind group layout / pipeline layout</td><td>Renderer initialization references</td><td>After dependent objects have been created</td></tr><tr><td>Pipeline, vertex/index/uniform buffers, bind group</td><td>Many frames</td><td>Renderer cleanup</td></tr><tr><td>Acquired texture and view</td><td>One frame</td><td>After submission/presentation or early exit</td></tr><tr><td>Encoder, pass encoder, command buffer</td><td>One frame</td><td>At renderer_frame return</td></tr><tr><td>Native capability arrays</td><td>Capability query scope</td><td>SurfaceCapabilitiesFreeMembers</td></tr></tbody></table></div></section><section><h2 id="section-3"><span class="section-number" aria-hidden="true">17.3</span>Read the cleanup we already wrote<a class="heading-link" href="#section-3" aria-label="Link to Read the cleanup we already wrote">#</a></h2><figure class="code-block"><figcaption>src/renderer.odin · renderer_destroy ::</figcaption><pre><code class="language-odin">renderer_destroy :: proc(renderer: ^Renderer) {
+    if renderer.bind_group != nil { wgpu.BindGroupRelease(renderer.bind_group) }
+    if renderer.uniform_buffer != nil { wgpu.BufferRelease(renderer.uniform_buffer) }
+    if renderer.index_buffer != nil { wgpu.BufferRelease(renderer.index_buffer) }
+    if renderer.vertex_buffer != nil { wgpu.BufferRelease(renderer.vertex_buffer) }
+    if renderer.pipeline != nil { wgpu.RenderPipelineRelease(renderer.pipeline) }
+    renderer^ = {}
+}</code></pre></figure><figure class="code-block"><figcaption>src/gpu.odin · gpu_destroy ::</figcaption><pre><code class="language-odin">gpu_destroy :: proc(gpu: ^GPU) {
+    if gpu.device != nil { _ = wgpu.DevicePoll(gpu.device, true, nil) }
+    if gpu.configured { wgpu.SurfaceUnconfigure(gpu.platform.surface) }
+    if gpu.queue != nil { wgpu.QueueRelease(gpu.queue) }
+    if gpu.device != nil { wgpu.DeviceRelease(gpu.device) }
+    if gpu.adapter != nil { wgpu.AdapterRelease(gpu.adapter) }
+    platform_surface_destroy(&amp;gpu.platform)
+    if gpu.instance != nil { wgpu.InstanceRelease(gpu.instance) }
+    gpu^ = {}
+}</code></pre></figure><p>Main registered GPU cleanup before renderer cleanup, so the renderer’s defer runs first. Releasing renderer references does not invalidate work already submitted by the preceding frame; the backend retains its in-flight dependencies. GPU cleanup then drains queued work, unconfigures the surface, and releases queue/device/adapter references. Finally the platform owner releases the surface and its Metal view, and the earlier main defers destroy the window and quit SDL.</p><p>The cleanup procedures check each handle and reset their owner struct afterward. That accommodates an initialization failure halfway through renderer setup. Native Release functions generally do not accept nil as a harmless no-op, so each check matters. The process-lifetime diagnostic flag remains available even while teardown can trigger native callbacks. A normal device-destroyed loss reason is ignored; actual failures are reported.</p><p>We wait at shutdown for simplicity, not once per frame. A per-frame DevicePoll with wait=true would turn the CPU/GPU pipeline into a serial handshake. It is valid to wait when the CPU genuinely needs a completed GPU result, such as a readback operation. Our moving rectangle never reads GPU memory back, so normal rendering needs queue ordering, not a CPU completion fence.</p></section><section><h2 id="section-4"><span class="section-number" aria-hidden="true">17.4</span>A failure policy is part of the implementation<a class="heading-link" href="#section-4" aria-label="Link to A failure policy is part of the implementation">#</a></h2><div class="table-scroll"><table><thead><tr><th scope="col">Failure</th><th scope="col">Implemented behavior</th><th scope="col">Reason</th></tr></thead><tbody><tr><td>SDL init/window failure</td><td>Print SDL error and return</td><td>No usable native window</td></tr><tr><td>Instance/surface failure</td><td>Print stage; clean partial state</td><td>Cannot establish presentation connection</td></tr><tr><td>Adapter/device failure</td><td>Print callback status/message; stop</td><td>No usable graphics connection</td></tr><tr><td>Unsupported surface format</td><td>Explain required sRGB formats; stop</td><td>Do not silently change the color contract</td></tr><tr><td>Zero/minimized/over-limit extent</td><td>Skip and briefly sleep; keep pumping</td><td>Wait for a usable window extent</td></tr><tr><td>Timeout or occlusion</td><td>Skip current presentation attempt</td><td>May be transient</td></tr><tr><td>Outdated</td><td>Mark dirty and retry next iteration</td><td>Refresh presentation configuration</td></tr><tr><td>Suboptimal success</td><td>Render now, refresh next iteration</td><td>Image usable but configuration should be renewed</td></tr><tr><td>Surface lost</td><td>Log and stop; restart required</td><td>Recreating the window/surface connection is not attempted</td></tr><tr><td>Device loss / uncaptured error</td><td>Log, set atomic fault, stop</td><td>Old device resources cannot be assumed usable</td></tr><tr><td>Present failure</td><td>Log and stop</td><td>Do not silently keep presenting an invalid chain</td></tr></tbody></table></div><aside class="callout note"><strong>Know the limits of error recovery</strong><p>This edition reports and exits on device or surface loss. It does not promise transparent GPU recovery. Native wgpu-native can also treat certain invalid-handle/API misuse paths as fatal before ordinary callbacks can recover. Guards, correct descriptors, and pinned API verification remain necessary.</p></aside></section><section><h2 id="section-5"><span class="section-number" aria-hidden="true">17.5</span>Debug from the last fact you can prove<a class="heading-link" href="#section-5" aria-label="Link to Debug from the last fact you can prove">#</a></h2><p>For a black window, first choose a conspicuous clear color. If that appears, acquisition, attachment setup, and submission/presentation have worked for that frame. Next use the constant-color triangle checkpoint. If that works but the final character does not, the first differences to inspect are vertex layout, indices, uniform layout, and transform values. An error callback with a labeled resource often points directly to the violated contract; read its first message before speculating about the driver.</p><p>For a character that does not move, inspect the chain in order: direction after SDL polling, dt in seconds, game.position after update, uniform.position before QueueWriteBuffer, and the shader’s usage of that field. If CPU position changes but uniform.position remains a literal, the GPU is correctly rendering stale data. Rebuilding pipelines or changing presentation modes cannot repair that disconnected value.</p><p>For distorted geometry, calculate the byte address of vertex one’s position from stride and offset. Compare it with the actual struct assertions. Check whether the index format matches u16. Then calculate the character’s four NDC corners from position, size, and view extent. A known correct byte layout plus known correct corners makes a shader/pipeline problem much more specific than “graphics are broken.”</p><p>Use labels already attached to resources: “character uniforms,” “character pipeline,” and “window color pass” turn backend diagnostics into references to our application. Error scopes can isolate expected validation experiments, and GPU capture tools can inspect submitted work, but neither is required to reason through this small pipeline. Temporarily add targeted logs rather than printing every field every frame and burying the first useful error.</p></section><section><h2 id="section-6"><span class="section-number" aria-hidden="true">17.6</span>An orderly frame is the cheapest lifetime check<a class="heading-link" href="#section-6" aria-label="Link to An orderly frame is the cheapest lifetime check">#</a></h2><p>Count the per-frame creates and acquisitions, then their matching releases. A successful render creates a view, encoder, pass, and command buffer and obtains a texture reference. Each has exactly one cleanup on every subsequent exit path. The persistent objects have no per-frame creation sites. Memory that grows without bound after thousands of frames is therefore a reason to inspect the native reference paths before inventing an allocator system.</p><p>No implementation changes are introduced in this chapter. The checkpoint is identical to chapter 16. Reviewing the existing lifetimes is a finished capability: you can now explain why returning from a frame is safe while the GPU might still be busy, and why descriptor locals can disappear even though their created objects survive.</p></section><section><h2 id="section-7"><span class="section-number" aria-hidden="true">17.7</span>When this work happens<a class="heading-link" href="#section-7" aria-label="Link to When this work happens">#</a></h2><div class="table-scroll"><table><thead><tr><th scope="col">Operation</th><th scope="col">Frequency</th><th scope="col">Reason</th></tr></thead><tbody><tr><td>Ownership audit</td><td>Development time</td><td>Check one matching release per owned reference</td></tr><tr><td>Per-frame native releases</td><td>Every attempted frame with acquired objects</td><td>Bound CPU/native object lifetimes</td></tr><tr><td>GPU-wide wait</td><td>Shutdown only</td><td>Orderly teardown without serializing all frames</td></tr></tbody></table></div></section><section><h2 id="section-8"><span class="section-number" aria-hidden="true">17.8</span>Read the symptom, test a hypothesis<a class="heading-link" href="#section-8" aria-label="Link to Read the symptom, test a hypothesis">#</a></h2><div class="table-scroll"><table><thead><tr><th scope="col">Symptom</th><th scope="col">What to inspect</th><th scope="col">Why it matters</th></tr></thead><tbody><tr><td>Treating Release as a GPU wait</td><td>Whether completion is actually required</td><td>Reference ownership and queue completion are separate</td></tr><tr><td>Freeing capability pointers with Odin delete</td><td>Native allocator ownership</td><td>The allocation did not come from Odin’s allocator</td></tr><tr><td>Retry loop after surface loss</td><td>The explicit fatal Lost branch</td><td>Reconfiguration is not guaranteed to rebuild a lost platform connection</td></tr></tbody></table></div></section><section><h2 id="section-9"><span class="section-number" aria-hidden="true">17.9</span>Experiments<a class="heading-link" href="#section-9" aria-label="Link to Experiments">#</a></h2><p>These short, optional checks help you test the explanation. Predict the result first, then run the program. Restore the chapter’s baseline before continuing; later chapters assume the supplied checkpoint.</p><ol><li>Temporarily break the uniform minimum size and observe which labeled validation diagnostic appears. Restore the valid layout before continuing.</li><li>Walk every return path in renderer_frame and mark the resources alive at that point. Check that their defers cover them.</li><li>Minimize and restore repeatedly. The application should remain responsive and avoid configuring zero-sized images.</li></ol></section><section><h2 id="section-10"><span class="section-number" aria-hidden="true">17.10</span>What we have now<a class="heading-link" href="#section-10" aria-label="Link to What we have now">#</a></h2><p>The completed moving-character program is unchanged; we audit its ownership and failure policies.</p><p>Before moving on, run this checkpoint and compare it with the stated result. If it differs, use the symptom table above or the complete files below to locate the missing step.</p><p>Run <code>odin run checkpoints/17/src</code> from the book root, with the SDL linker flags for your platform. <a href="../appendix/build.html">Dependency and build instructions →</a></p></section><section class="challenges"><h2 id="section-11"><span class="section-number" aria-hidden="true">17.11</span>Challenges<a class="heading-link" href="#section-11" aria-label="Link to Challenges">#</a></h2><p class="challenge-intro">Optional extensions. The complete game in chapter 23 requires none of these. Work in a separate copy if you want to explore; the next chapter starts from this chapter’s supplied baseline.</p><ol><li><h3>A controlled failure switch</h3><p>Add development-only return points after selected successful initialization steps. Use ordinary cleanup rather than passing invalid handles to the native API.</p><p class="challenge-check"><strong>Check your result:</strong> Every forced stop reports the stage and releases only the resources already acquired.</p></li><li><h3>A small diagnostic summary</h3><p>Track initialization stage, last acquisition result, and successful frame count. Print the summary when the program exits after a graphics error.</p><p class="challenge-check"><strong>Check your result:</strong> A failure report tells you the last successful boundary without thousands of per-frame log lines.</p></li></ol></section><section><h2 id="section-12"><span class="section-number" aria-hidden="true">17.12</span>Exact code changes and runnable checkpoint<a class="heading-link" href="#section-12" aria-label="Link to Exact code changes and runnable checkpoint">#</a></h2><p>No implementation changes. This checkpoint retains the previous complete runnable source.</p><p>Complete end-of-chapter files follow. These are already present in <code>checkpoints/17/</code>; no assembly from excerpts is required.</p><details class="source-file"><summary>src/main.odin <span>63 lines</span></summary><p><a download href="../checkpoints/17/src/main.odin">Download this checkpoint’s src/main.odin</a></p><figure class="code-block"><figcaption>checkpoints/17/src/main.odin · complete file</figcaption><pre><code class="language-odin" data-source="checkpoints/17/src/main.odin">package character
+import &quot;core:fmt&quot;
+import &quot;core:c&quot;
+import sdl &quot;vendor:sdl3&quot;
+import wgpu &quot;vendor:wgpu&quot;
+
+main :: proc() {
+    if !sdl.Init({.VIDEO}) {
+        fmt.eprintln(&quot;SDL initialization:&quot;, sdl.GetError())
+        return
+    }
+    defer sdl.Quit()
+    flags: sdl.WindowFlags = {.RESIZABLE, .HIGH_PIXEL_DENSITY}
+    when ODIN_OS == .Darwin { flags += {.METAL} }
+    window := sdl.CreateWindow(&quot;Native Pixels&quot;, 960, 640, flags)
+    if window == nil {
+        fmt.eprintln(&quot;Window creation:&quot;, sdl.GetError())
+        return
+    }
+    defer sdl.DestroyWindow(window)
+    if !sdl.ShowWindow(window) {
+        fmt.eprintln(&quot;Show window:&quot;, sdl.GetError())
+        return
+    }
+    if !sdl.RaiseWindow(window) { fmt.eprintln(&quot;Window focus request:&quot;, sdl.GetError()) }
+
+    gpu: GPU
+    defer gpu_destroy(&amp;gpu)
+    if !gpu_init(&amp;gpu, window) { return }
+
+    renderer: Renderer
+    defer renderer_destroy(&amp;renderer)
+    if !renderer_init(&amp;renderer, &amp;gpu) { return }
+
+    game := Game{position = {120, 100}, size = {48, 64}, tint = {1, 1, 1, 1}, speed = 240}
+    previous_ticks := sdl.GetTicksNS()
+    running := true
+    for running {
+        event: sdl.Event
+        for sdl.PollEvent(&amp;event) {
+            #partial switch event.type {
+            case .QUIT, .WINDOW_CLOSE_REQUESTED: running = false
+            case .WINDOW_PIXEL_SIZE_CHANGED, .WINDOW_RESTORED: gpu.dirty = true
+            }
+        }
+        if !running { break }
+        now := sdl.GetTicksNS()
+        dt := min(f64(now - previous_ticks) / 1_000_000_000.0, 0.05)
+        previous_ticks = now
+        wgpu.InstanceProcessEvents(gpu.instance)
+        if gpu_failed() { break }
+        width, height: c.int
+        if !sdl.GetWindowSize(window, &amp;width, &amp;height) { break }
+        if width &lt;= 0 || height &lt;= 0 || .MINIMIZED in sdl.GetWindowFlags(window) {
+            sdl.Delay(10)
+            continue
+        }
+        view_size := [2]f32{f32(width), f32(height)}
+        direction := read_movement(window)
+        game_update(&amp;game, direction, f32(dt), view_size)
+        if !renderer_frame(&amp;gpu, window, &amp;renderer, game.position, game.size, game.tint, view_size) { break }
+    }
+}
+</code></pre></figure></details><details class="source-file"><summary>src/platform.odin <span>73 lines</span></summary><p><a download href="../checkpoints/17/src/platform.odin">Download this checkpoint’s src/platform.odin</a></p><figure class="code-block"><figcaption>checkpoints/17/src/platform.odin · complete file</figcaption><pre><code class="language-odin" data-source="checkpoints/17/src/platform.odin">package character
+import &quot;core:fmt&quot;
+import sdl &quot;vendor:sdl3&quot;
+import wgpu &quot;vendor:wgpu&quot;
+
+// SDL owns the window. We own this extra Metal view, when one exists.
+Platform_Surface :: struct {
+    surface: wgpu.Surface,
+    metal_view: sdl.MetalView, // nil on Windows and Linux
+}
+
+platform_surface_create :: proc(instance: wgpu.Instance, window: ^sdl.Window) -&gt; Platform_Surface {
+    result: Platform_Surface
+    when ODIN_OS == .Darwin {
+        result.metal_view = sdl.Metal_CreateView(window)
+        if result.metal_view == nil {
+            fmt.eprintln(&quot;Metal view:&quot;, sdl.GetError())
+            return result
+        }
+        layer := sdl.Metal_GetLayer(result.metal_view)
+        if layer == nil { return result }
+        source := wgpu.SurfaceSourceMetalLayer{
+            chain = {sType = .SurfaceSourceMetalLayer}, layer = layer,
+        }
+        descriptor := wgpu.SurfaceDescriptor{nextInChain = &amp;source.chain, label = &quot;SDL Metal surface&quot;}
+        result.surface = wgpu.InstanceCreateSurface(instance, &amp;descriptor)
+    } else when ODIN_OS == .Windows {
+        properties := sdl.GetWindowProperties(window)
+        hwnd := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_WIN32_HWND_POINTER, nil)
+        instance_handle := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_WIN32_INSTANCE_POINTER, nil)
+        if hwnd == nil || instance_handle == nil { return result }
+        source := wgpu.SurfaceSourceWindowsHWND{
+            chain = {sType = .SurfaceSourceWindowsHWND}, hwnd = hwnd, hinstance = instance_handle,
+        }
+        descriptor := wgpu.SurfaceDescriptor{nextInChain = &amp;source.chain, label = &quot;SDL Win32 surface&quot;}
+        result.surface = wgpu.InstanceCreateSurface(instance, &amp;descriptor)
+    } else when ODIN_OS == .Linux {
+        properties := sdl.GetWindowProperties(window)
+        switch sdl.GetCurrentVideoDriver() {
+        case &quot;wayland&quot;:
+            display := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_WAYLAND_DISPLAY_POINTER, nil)
+            surface := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_WAYLAND_SURFACE_POINTER, nil)
+            if display == nil || surface == nil { return result }
+            source := wgpu.SurfaceSourceWaylandSurface{
+                chain = {sType = .SurfaceSourceWaylandSurface}, display = display, surface = surface,
+            }
+            descriptor := wgpu.SurfaceDescriptor{nextInChain = &amp;source.chain, label = &quot;SDL Wayland surface&quot;}
+            result.surface = wgpu.InstanceCreateSurface(instance, &amp;descriptor)
+        case &quot;x11&quot;:
+            display := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_X11_DISPLAY_POINTER, nil)
+            window_id := sdl.GetNumberProperty(properties, sdl.PROP_WINDOW_X11_WINDOW_NUMBER, 0)
+            if display == nil || window_id == 0 { return result }
+            source := wgpu.SurfaceSourceXlibWindow{
+                chain = {sType = .SurfaceSourceXlibWindow}, display = display, window = u64(window_id),
+            }
+            descriptor := wgpu.SurfaceDescriptor{nextInChain = &amp;source.chain, label = &quot;SDL X11 surface&quot;}
+            result.surface = wgpu.InstanceCreateSurface(instance, &amp;descriptor)
+        case:
+            fmt.eprintln(&quot;Unsupported SDL video driver:&quot;, sdl.GetCurrentVideoDriver())
+        }
+    } else {
+        #panic(&quot;This book targets macOS, Windows, and Linux desktop windows&quot;)
+    }
+    return result
+}
+
+platform_surface_destroy :: proc(platform: ^Platform_Surface) {
+    if platform.surface != nil { wgpu.SurfaceRelease(platform.surface) }
+    when ODIN_OS == .Darwin {
+        if platform.metal_view != nil { sdl.Metal_DestroyView(platform.metal_view) }
+    }
+    platform^ = {}
+}
+</code></pre></figure></details><details class="source-file"><summary>src/gpu.odin <span>173 lines</span></summary><p><a download href="../checkpoints/17/src/gpu.odin">Download this checkpoint’s src/gpu.odin</a></p><figure class="code-block"><figcaption>checkpoints/17/src/gpu.odin · complete file</figcaption><pre><code class="language-odin" data-source="checkpoints/17/src/gpu.odin">package character
+import &quot;core:fmt&quot;
+import &quot;core:c&quot;
+import &quot;base:runtime&quot;
+import &quot;base:intrinsics&quot;
+import sdl &quot;vendor:sdl3&quot;
+import wgpu &quot;vendor:wgpu&quot;
+
+GPU :: struct {
+    instance: wgpu.Instance,
+    platform: Platform_Surface,
+    adapter: wgpu.Adapter,
+    device: wgpu.Device,
+    queue: wgpu.Queue,
+    adapter_done, device_done: bool,
+    config: wgpu.SurfaceConfiguration,
+    configured, dirty: bool,
+    max_texture_dimension: u32,
+}
+
+gpu_init :: proc(gpu: ^GPU, window: ^sdl.Window) -&gt; bool {
+    gpu.instance = wgpu.CreateInstance(nil)
+    if gpu.instance == nil {
+        fmt.eprintln(&quot;Cannot create a WebGPU instance&quot;)
+        return false
+    }
+    gpu.platform = platform_surface_create(gpu.instance, window)
+    if gpu.platform.surface == nil {
+        fmt.eprintln(&quot;Cannot connect WebGPU to the SDL window&quot;)
+        return false
+    }
+    if !gpu_request_device(gpu) { return false }
+    if !gpu_choose_surface(gpu) { return false }
+    gpu.dirty = true
+    _ = gpu_refresh_surface(gpu, window)
+    return !gpu_failed()
+}
+
+gpu_destroy :: proc(gpu: ^GPU) {
+    if gpu.device != nil { _ = wgpu.DevicePoll(gpu.device, true, nil) }
+    if gpu.configured { wgpu.SurfaceUnconfigure(gpu.platform.surface) }
+    if gpu.queue != nil { wgpu.QueueRelease(gpu.queue) }
+    if gpu.device != nil { wgpu.DeviceRelease(gpu.device) }
+    if gpu.adapter != nil { wgpu.AdapterRelease(gpu.adapter) }
+    platform_surface_destroy(&amp;gpu.platform)
+    if gpu.instance != nil { wgpu.InstanceRelease(gpu.instance) }
+    gpu^ = {}
+}
+
+// Process-lifetime storage: native diagnostic callbacks may arrive on other threads.
+gpu_fault: bool
+
+gpu_failed :: proc() -&gt; bool { return intrinsics.atomic_load(&amp;gpu_fault) }
+
+adapter_ready :: proc &quot;c&quot; (status: wgpu.RequestAdapterStatus, adapter: wgpu.Adapter,
+                          message: wgpu.StringView, userdata1, userdata2: rawptr) {
+    context = runtime.default_context()
+    gpu := cast(^GPU)userdata1
+    gpu.adapter_done = true
+    if status == .Success { gpu.adapter = adapter }
+    else { fmt.eprintln(&quot;Adapter request:&quot;, status, message) }
+}
+
+device_ready :: proc &quot;c&quot; (status: wgpu.RequestDeviceStatus, device: wgpu.Device,
+                         message: wgpu.StringView, userdata1, userdata2: rawptr) {
+    context = runtime.default_context()
+    gpu := cast(^GPU)userdata1
+    gpu.device_done = true
+    if status == .Success { gpu.device = device }
+    else { fmt.eprintln(&quot;Device request:&quot;, status, message) }
+}
+
+device_lost :: proc &quot;c&quot; (device: ^wgpu.Device, reason: wgpu.DeviceLostReason,
+                        message: wgpu.StringView, userdata1, userdata2: rawptr) {
+    context = runtime.default_context()
+    if reason == .Destroyed { return }
+    fmt.eprintln(&quot;Device lost:&quot;, reason, message)
+    intrinsics.atomic_store(&amp;gpu_fault, true)
+}
+
+uncaptured_error :: proc &quot;c&quot; (device: ^wgpu.Device, error_type: wgpu.ErrorType,
+                             message: wgpu.StringView, userdata1, userdata2: rawptr) {
+    context = runtime.default_context()
+    fmt.eprintln(&quot;WebGPU error:&quot;, error_type, message)
+    intrinsics.atomic_store(&amp;gpu_fault, true)
+}
+
+gpu_request_device :: proc(gpu: ^GPU) -&gt; bool {
+    options := wgpu.RequestAdapterOptions{
+        compatibleSurface = gpu.platform.surface,
+        powerPreference = .HighPerformance,
+        featureLevel = .Core,
+    }
+    _ = wgpu.InstanceRequestAdapter(gpu.instance, &amp;options, {
+        mode = .AllowSpontaneos, callback = adapter_ready, userdata1 = gpu,
+    })
+    // Verified wgpu-native 29.0.1.1 behavior: these two request callbacks run inline.
+    // Do not carry this assumption to Dawn or to a later native implementation.
+    assert(gpu.adapter_done, &quot;Pinned wgpu-native request contract changed&quot;)
+    if gpu.adapter == nil { return false }
+    descriptor := wgpu.DeviceDescriptor{
+        label = &quot;2D device&quot;, defaultQueue = {label = &quot;2D queue&quot;},
+        deviceLostCallbackInfo = {mode = .AllowSpontaneos, callback = device_lost},
+        uncapturedErrorCallbackInfo = {callback = uncaptured_error},
+    }
+    _ = wgpu.AdapterRequestDevice(gpu.adapter, &amp;descriptor, {
+        mode = .AllowSpontaneos, callback = device_ready, userdata1 = gpu,
+    })
+    assert(gpu.device_done, &quot;Pinned wgpu-native request contract changed&quot;)
+    if gpu.device == nil { return false }
+    gpu.queue = wgpu.DeviceGetQueue(gpu.device)
+    return gpu.queue != nil &amp;&amp; !gpu_failed()
+}
+
+gpu_choose_surface :: proc(gpu: ^GPU) -&gt; bool {
+    caps, status := wgpu.SurfaceGetCapabilities(gpu.platform.surface, gpu.adapter)
+    if status != .Success {
+        fmt.eprintln(&quot;Surface capabilities unavailable:&quot;, status)
+        return false
+    }
+    defer wgpu.SurfaceCapabilitiesFreeMembers(caps)
+    format: wgpu.TextureFormat = .Undefined
+    for candidate in caps.formats[:caps.formatCount] {
+        if candidate == .BGRA8UnormSrgb || candidate == .RGBA8UnormSrgb {
+            format = candidate
+            break
+        }
+    }
+    if format == .Undefined || !(.RenderAttachment in caps.usages) {
+        fmt.eprintln(&quot;This example needs an sRGB RGBA/BGRA renderable surface&quot;)
+        return false
+    }
+    fifo := false
+    for mode in caps.presentModes[:caps.presentModeCount] {
+        if mode == .Fifo { fifo = true }
+    }
+    if !fifo { fmt.eprintln(&quot;Surface does not offer FIFO presentation&quot;); return false }
+    alpha: wgpu.CompositeAlphaMode = .Auto
+    for mode in caps.alphaModes[:caps.alphaModeCount] {
+        if mode == .Opaque { alpha = .Opaque }
+    }
+    limits, limit_status := wgpu.DeviceGetLimits(gpu.device)
+    if limit_status != .Success { return false }
+    gpu.max_texture_dimension = limits.maxTextureDimension2D
+    gpu.config = {
+        device = gpu.device, format = format, usage = {.RenderAttachment},
+        presentMode = .Fifo, alphaMode = alpha,
+    }
+    fmt.println(&quot;Surface format:&quot;, format)
+    return true
+}
+
+gpu_refresh_surface :: proc(gpu: ^GPU, window: ^sdl.Window) -&gt; bool {
+    if .MINIMIZED in sdl.GetWindowFlags(window) { return false }
+    width, height: c.int
+    if !sdl.GetWindowSizeInPixels(window, &amp;width, &amp;height) {
+        fmt.eprintln(&quot;Drawable size:&quot;, sdl.GetError())
+        intrinsics.atomic_store(&amp;gpu_fault, true)
+        return false
+    }
+    if width &lt;= 0 || height &lt;= 0 { return false }
+    if u32(width) &gt; gpu.max_texture_dimension || u32(height) &gt; gpu.max_texture_dimension {
+        return false
+    }
+    if gpu.dirty || !gpu.configured || gpu.config.width != u32(width) || gpu.config.height != u32(height) {
+        gpu.config.width = u32(width)
+        gpu.config.height = u32(height)
+        wgpu.SurfaceConfigure(gpu.platform.surface, &amp;gpu.config)
+        gpu.configured = !gpu_failed()
+        gpu.dirty = false
+    }
+    return gpu.configured
+}
+</code></pre></figure></details><details class="source-file"><summary>src/renderer.odin <span>182 lines</span></summary><p><a download href="../checkpoints/17/src/renderer.odin">Download this checkpoint’s src/renderer.odin</a></p><figure class="code-block"><figcaption>checkpoints/17/src/renderer.odin · complete file</figcaption><pre><code class="language-odin" data-source="checkpoints/17/src/renderer.odin">package character
+import &quot;core:fmt&quot;
+import sdl &quot;vendor:sdl3&quot;
+import wgpu &quot;vendor:wgpu&quot;
+
+renderer_frame :: proc(gpu: ^GPU, window: ^sdl.Window, renderer: ^Renderer,
+                       position, size: [2]f32, tint: [4]f32, view_size: [2]f32) -&gt; bool {
+    if !gpu_refresh_surface(gpu, window) { sdl.Delay(10); return !gpu_failed() }
+    uniforms := Uniforms{
+        position = position, size = size,
+        view_size = view_size,
+        camera = {0, 0}, tint = tint,
+    }
+    wgpu.QueueWriteBuffer(gpu.queue, renderer.uniform_buffer, 0, &amp;uniforms, size_of(uniforms))
+    frame := wgpu.SurfaceGetCurrentTexture(gpu.platform.surface)
+    // Release any returned handle on every exit path, including a failed acquisition.
+    defer if frame.texture != nil { wgpu.TextureRelease(frame.texture) }
+    #partial switch frame.status {
+    case .SuccessOptimal:
+    case .SuccessSuboptimal: gpu.dirty = true
+    case .Timeout, .Occluded: sdl.Delay(10); return true
+    case .Outdated: gpu.dirty = true; sdl.Delay(10); return true
+    case .Lost:
+        fmt.eprintln(&quot;Surface lost; close and restart this small example&quot;)
+        return false
+    case:
+        fmt.eprintln(&quot;Surface acquisition:&quot;, frame.status)
+        return false
+    }
+    if frame.texture == nil { fmt.eprintln(&quot;Successful acquisition without a texture&quot;); return false }
+    view := wgpu.TextureCreateView(frame.texture, nil)
+    if view == nil { return false }
+    defer wgpu.TextureViewRelease(view)
+    encoder := wgpu.DeviceCreateCommandEncoder(gpu.device, &amp;wgpu.CommandEncoderDescriptor{label = &quot;frame&quot;})
+    if encoder == nil { return false }
+    defer wgpu.CommandEncoderRelease(encoder)
+    attachment := wgpu.RenderPassColorAttachment{
+        view = view, depthSlice = wgpu.DEPTH_SLICE_UNDEFINED,
+        loadOp = .Clear, storeOp = .Store, clearValue = {0.018, 0.028, 0.048, 1},
+    }
+    pass_descriptor := wgpu.RenderPassDescriptor{
+        label = &quot;window color pass&quot;, colorAttachmentCount = 1, colorAttachments = &amp;attachment,
+    }
+    pass := wgpu.CommandEncoderBeginRenderPass(encoder, &amp;pass_descriptor)
+    if pass == nil { return false }
+    defer wgpu.RenderPassEncoderRelease(pass)
+    wgpu.RenderPassEncoderSetPipeline(pass, renderer.pipeline)
+    wgpu.RenderPassEncoderSetBindGroup(pass, 0, renderer.bind_group)
+    wgpu.RenderPassEncoderSetVertexBuffer(pass, 0, renderer.vertex_buffer, 0, size_of(VERTICES))
+    wgpu.RenderPassEncoderSetIndexBuffer(pass, renderer.index_buffer, .Uint16, 0, size_of(INDICES))
+    wgpu.RenderPassEncoderDrawIndexed(pass, 6, 1, 0, 0, 0)
+    wgpu.RenderPassEncoderEnd(pass)
+    commands := wgpu.CommandEncoderFinish(encoder, &amp;wgpu.CommandBufferDescriptor{label = &quot;finished frame&quot;})
+    if commands == nil { return false }
+    defer wgpu.CommandBufferRelease(commands)
+    if gpu_failed() { return false }
+    wgpu.QueueSubmit(gpu.queue, []wgpu.CommandBuffer{commands})
+    if wgpu.SurfacePresent(gpu.platform.surface) != .Success {
+        fmt.eprintln(&quot;Surface presentation failed&quot;)
+        return false
+    }
+    return !gpu_failed()
+}
+
+Vertex :: struct {
+    position: [2]f32,
+    color: [4]f32,
+}
+#assert(size_of(Vertex) == 24)
+#assert(offset_of(Vertex, position) == 0)
+#assert(offset_of(Vertex, color) == 8)
+
+VERTICES :: [4]Vertex{
+    {{0, 0}, {0.12, 0.78, 0.55, 1}},
+    {{1, 0}, {0.12, 0.78, 0.55, 1}},
+    {{1, 1}, {0.12, 0.78, 0.55, 1}},
+    {{0, 1}, {0.12, 0.78, 0.55, 1}},
+}
+INDICES :: [6]u16{0, 1, 2, 0, 2, 3}
+
+Uniforms :: struct #align(16) {
+    position: [2]f32,
+    size: [2]f32,
+    view_size: [2]f32,
+    camera: [2]f32,
+    tint: [4]f32,
+}
+#assert(size_of(Uniforms) == 48)
+#assert(offset_of(Uniforms, position) == 0)
+#assert(offset_of(Uniforms, size) == 8)
+#assert(offset_of(Uniforms, view_size) == 16)
+#assert(offset_of(Uniforms, camera) == 24)
+#assert(offset_of(Uniforms, tint) == 32)
+
+Renderer :: struct {
+    pipeline: wgpu.RenderPipeline,
+    vertex_buffer: wgpu.Buffer,
+    index_buffer: wgpu.Buffer,
+    uniform_buffer: wgpu.Buffer,
+    bind_group: wgpu.BindGroup,
+}
+
+renderer_init :: proc(renderer: ^Renderer, gpu: ^GPU) -&gt; bool {
+    renderer.vertex_buffer = wgpu.DeviceCreateBuffer(gpu.device, &amp;wgpu.BufferDescriptor{
+        label = &quot;character vertices&quot;, size = size_of(VERTICES), usage = {.Vertex, .CopyDst},
+    })
+    if renderer.vertex_buffer == nil { return false }
+    vertices := VERTICES
+    wgpu.QueueWriteBuffer(gpu.queue, renderer.vertex_buffer, 0, &amp;vertices, size_of(vertices))
+    renderer.index_buffer = wgpu.DeviceCreateBuffer(gpu.device, &amp;wgpu.BufferDescriptor{
+        label = &quot;quad indices&quot;, size = size_of(INDICES), usage = {.Index, .CopyDst},
+    })
+    if renderer.index_buffer == nil { return false }
+    indices := INDICES
+    wgpu.QueueWriteBuffer(gpu.queue, renderer.index_buffer, 0, &amp;indices, size_of(indices))
+    source := wgpu.ShaderSourceWGSL{
+        chain = {sType = .ShaderSourceWGSL}, code = #load(&quot;../shaders/character.wgsl&quot;, string),
+    }
+    shader := wgpu.DeviceCreateShaderModule(gpu.device, &amp;wgpu.ShaderModuleDescriptor{
+        label = &quot;character WGSL&quot;, nextInChain = &amp;source.chain,
+    })
+    if shader == nil { return false }
+    defer wgpu.ShaderModuleRelease(shader)
+    if gpu_failed() { return false }
+    renderer.uniform_buffer = wgpu.DeviceCreateBuffer(gpu.device, &amp;wgpu.BufferDescriptor{
+        label = &quot;character uniforms&quot;, size = size_of(Uniforms), usage = {.Uniform, .CopyDst},
+    })
+    if renderer.uniform_buffer == nil { return false }
+    binding_layout := wgpu.BindGroupLayoutEntry{
+        binding = 0, visibility = {.Vertex},
+        buffer = {type = .Uniform, minBindingSize = size_of(Uniforms)},
+    }
+    group_layout := wgpu.DeviceCreateBindGroupLayout(gpu.device, &amp;wgpu.BindGroupLayoutDescriptor{
+        label = &quot;character resource interface&quot;, entryCount = 1, entries = &amp;binding_layout,
+    })
+    if group_layout == nil { return false }
+    defer wgpu.BindGroupLayoutRelease(group_layout)
+    entry := wgpu.BindGroupEntry{binding = 0, buffer = renderer.uniform_buffer, offset = 0, size = size_of(Uniforms)}
+    renderer.bind_group = wgpu.DeviceCreateBindGroup(gpu.device, &amp;wgpu.BindGroupDescriptor{
+        label = &quot;character resources&quot;, layout = group_layout, entryCount = 1, entries = &amp;entry,
+    })
+    if renderer.bind_group == nil { return false }
+    layout := wgpu.DeviceCreatePipelineLayout(gpu.device, &amp;wgpu.PipelineLayoutDescriptor{
+        label = &quot;character pipeline interface&quot;, bindGroupLayoutCount = 1, bindGroupLayouts = &amp;group_layout,
+    })
+    if layout == nil { return false }
+    defer wgpu.PipelineLayoutRelease(layout)
+    blend := wgpu.BlendState{
+        color = {operation = .Add, srcFactor = .SrcAlpha, dstFactor = .OneMinusSrcAlpha},
+        alpha = {operation = .Add, srcFactor = .One, dstFactor = .OneMinusSrcAlpha},
+    }
+    target := wgpu.ColorTargetState{
+        format = gpu.config.format, blend = &amp;blend, writeMask = {.Red, .Green, .Blue, .Alpha},
+    }
+    fragment := wgpu.FragmentState{module = shader, entryPoint = &quot;fs_main&quot;, targetCount = 1, targets = &amp;target}
+    attributes := [2]wgpu.VertexAttribute{
+        {format = .Float32x2, offset = u64(offset_of(Vertex, position)), shaderLocation = 0},
+        {format = .Float32x4, offset = u64(offset_of(Vertex, color)), shaderLocation = 1},
+    }
+    vertex_layout := wgpu.VertexBufferLayout{
+        arrayStride = size_of(Vertex), stepMode = .Vertex,
+        attributeCount = len(attributes), attributes = raw_data(attributes[:]),
+    }
+    descriptor := wgpu.RenderPipelineDescriptor{
+        label = &quot;character pipeline&quot;, layout = layout,
+        vertex = {module = shader, entryPoint = &quot;vs_main&quot;, bufferCount = 1, buffers = &amp;vertex_layout},
+        fragment = &amp;fragment,
+        primitive = {topology = .TriangleList, frontFace = .CCW, cullMode = .None},
+        multisample = {count = 1, mask = 0xffffffff},
+    }
+    renderer.pipeline = wgpu.DeviceCreateRenderPipeline(gpu.device, &amp;descriptor)
+    return renderer.pipeline != nil &amp;&amp; !gpu_failed()
+}
+
+renderer_destroy :: proc(renderer: ^Renderer) {
+    if renderer.bind_group != nil { wgpu.BindGroupRelease(renderer.bind_group) }
+    if renderer.uniform_buffer != nil { wgpu.BufferRelease(renderer.uniform_buffer) }
+    if renderer.index_buffer != nil { wgpu.BufferRelease(renderer.index_buffer) }
+    if renderer.vertex_buffer != nil { wgpu.BufferRelease(renderer.vertex_buffer) }
+    if renderer.pipeline != nil { wgpu.RenderPipelineRelease(renderer.pipeline) }
+    renderer^ = {}
+}
+</code></pre></figure></details><details class="source-file"><summary>shaders/character.wgsl <span>38 lines</span></summary><p><a download href="../checkpoints/17/shaders/character.wgsl">Download this checkpoint’s shaders/character.wgsl</a></p><figure class="code-block"><figcaption>checkpoints/17/shaders/character.wgsl · complete file</figcaption><pre><code class="language-wgsl" data-source="checkpoints/17/shaders/character.wgsl">struct Uniforms {
+    position: vec2f,
+    size: vec2f,
+    view_size: vec2f,
+    camera: vec2f,
+    tint: vec4f,
+}
+@group(0) @binding(0) var&lt;uniform&gt; uniforms: Uniforms;
+
+struct Vertex_Out {
+    @builtin(position) clip_position: vec4f,
+    @location(0) color: vec4f,
+    @location(1) local_position: vec2f,
+}
+
+@vertex
+fn vs_main(@location(0) position: vec2f, @location(1) color: vec4f) -&gt; Vertex_Out {
+    var out: Vertex_Out;
+    let pixel = uniforms.position + position * uniforms.size - uniforms.camera;
+    let ndc = vec2f(2.0 * pixel.x / uniforms.view_size.x - 1.0,
+                   1.0 - 2.0 * pixel.y / uniforms.view_size.y);
+    out.clip_position = vec4f(ndc, 0.0, 1.0);
+    out.color = color * uniforms.tint;
+    out.local_position = position;
+    return out;
+}
+
+@fragment
+fn fs_main(in: Vertex_Out) -&gt; @location(0) vec4f {
+    let p = in.local_position;
+    let left_eye = p.x &gt; 0.22 &amp;&amp; p.x &lt; 0.36 &amp;&amp; p.y &gt; 0.25 &amp;&amp; p.y &lt; 0.39;
+    let right_eye = p.x &gt; 0.64 &amp;&amp; p.x &lt; 0.78 &amp;&amp; p.y &gt; 0.25 &amp;&amp; p.y &lt; 0.39;
+    let mouth = p.x &gt; 0.35 &amp;&amp; p.x &lt; 0.65 &amp;&amp; p.y &gt; 0.62 &amp;&amp; p.y &lt; 0.69;
+    if left_eye || right_eye || mouth {
+        return vec4f(0.012, 0.025, 0.040, in.color.a);
+    }
+    return in.color;
+}
+</code></pre></figure></details><details class="source-file"><summary>src/game.odin <span>31 lines</span></summary><p><a download href="../checkpoints/17/src/game.odin">Download this checkpoint’s src/game.odin</a></p><figure class="code-block"><figcaption>checkpoints/17/src/game.odin · complete file</figcaption><pre><code class="language-odin" data-source="checkpoints/17/src/game.odin">package character
+import &quot;core:math&quot;
+import sdl &quot;vendor:sdl3&quot;
+
+Game :: struct {
+    position: [2]f32,
+    size: [2]f32,
+    tint: [4]f32,
+    speed: f32,
+}
+
+read_movement :: proc(window: ^sdl.Window) -&gt; [2]f32 {
+    if !(.INPUT_FOCUS in sdl.GetWindowFlags(window)) { return {} }
+    keys := sdl.GetKeyboardState(nil)
+    direction: [2]f32
+    if keys[sdl.Scancode.D] || keys[sdl.Scancode.RIGHT] { direction.x += 1 }
+    if keys[sdl.Scancode.A] || keys[sdl.Scancode.LEFT]  { direction.x -= 1 }
+    if keys[sdl.Scancode.S] || keys[sdl.Scancode.DOWN]  { direction.y += 1 }
+    if keys[sdl.Scancode.W] || keys[sdl.Scancode.UP]    { direction.y -= 1 }
+    return direction
+}
+
+game_update :: proc(game: ^Game, direction: [2]f32, dt: f32, view_size: [2]f32) {
+    direction := direction
+    length_squared := direction.x * direction.x + direction.y * direction.y
+    if length_squared &gt; 0 { direction /= math.sqrt(length_squared) }
+    game.position += direction * game.speed * dt
+    // If the window is smaller than the character, anchor that axis at zero.
+    game.position.x = clamp(game.position.x, 0, max(f32(0), view_size.x - game.size.x))
+    game.position.y = clamp(game.position.y, 0, max(f32(0), view_size.y - game.size.y))
+}
+</code></pre></figure></details></section><nav class="chapter-navigation" aria-label="Chapter navigation"><a href="../chapters/16-color-alpha-character.html"><span>← Previous Chapter</span><small>Color, alpha, and the final character</small></a><a href="../contents.html">Contents</a><a href="../chapters/18-from-main-to-pixels.html"><span>Next Chapter →</span><small>From a key press to a presented image</small></a></nav></article></main><footer class="page-footer"><span>Native Pixels · September 2026 edition</span><a href="../appendix/sources.html">Sources &amp; verification</a><a href="../LICENSE">MIT License</a><a href="#top">Back to top ↑</a></footer></div></body></html>

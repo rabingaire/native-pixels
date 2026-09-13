@@ -1,0 +1,672 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="description" content="Keep geometry in place. Send the changing transform through a small, explicitly laid-out uniform buffer."><meta name="author" content="Rabin Gaire"><title>Let the vertex shader place the character — Native Pixels</title><link rel="canonical" href="https://rabingaire.com.np/native-pixels/chapters/12-uniforms-and-bindings.html"><link rel="sitemap" type="application/xml" href="../sitemap.xml"><meta property="og:type" content="article"><meta property="og:site_name" content="Native Pixels"><meta property="og:locale" content="en_US"><meta property="og:title" content="Let the vertex shader place the character — Native Pixels"><meta property="og:description" content="Keep geometry in place. Send the changing transform through a small, explicitly laid-out uniform buffer."><meta property="og:url" content="https://rabingaire.com.np/native-pixels/chapters/12-uniforms-and-bindings.html"><meta property="og:image" content="https://rabingaire.com.np/native-pixels/assets/room-gameplay.png"><meta property="og:image:alt" content="Pixel-art room rendered with native WebGPU, Odin, and SDL3"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Let the vertex shader place the character — Native Pixels"><meta name="twitter:description" content="Keep geometry in place. Send the changing transform through a small, explicitly laid-out uniform buffer."><meta name="twitter:image" content="https://rabingaire.com.np/native-pixels/assets/room-gameplay.png"><script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Book","@id":"https://rabingaire.com.np/native-pixels/#book","name":"Native Pixels","url":"https://rabingaire.com.np/native-pixels/","description":"Learn native 2D WebGPU with Odin and SDL3 in 23 chapters. Build a pixel-art game with sprite animation, collision, and complete runnable source.","inLanguage":"en","isAccessibleForFree":true,"author":{"@type":"Person","name":"Rabin Gaire"},"license":"https://rabingaire.com.np/native-pixels/LICENSE","image":"https://rabingaire.com.np/native-pixels/assets/room-gameplay.png"},{"@type":"Chapter","@id":"https://rabingaire.com.np/native-pixels/chapters/12-uniforms-and-bindings.html","url":"https://rabingaire.com.np/native-pixels/chapters/12-uniforms-and-bindings.html","name":"Let the vertex shader place the character","description":"Keep geometry in place. Send the changing transform through a small, explicitly laid-out uniform buffer.","inLanguage":"en","isPartOf":{"@id":"https://rabingaire.com.np/native-pixels/#book"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Native Pixels","item":"https://rabingaire.com.np/native-pixels/"},{"@type":"ListItem","position":2,"name":"Let the vertex shader place the character","item":"https://rabingaire.com.np/native-pixels/chapters/12-uniforms-and-bindings.html"}]}]}</script><script>try{const theme=localStorage.getItem("native-pixels-theme");if(theme==="light"||theme==="dark")document.documentElement.dataset.theme=theme;}catch{}</script><link rel="stylesheet" href="../assets/style.css"><script defer src="../assets/book.js"></script></head>
+<body id="top" class="reading-page"><a class="skip-link" href="#main">Skip to content</a><div class="reading-progress" aria-hidden="true"></div><aside class="book-rail"><a class="wordmark" href="../index.html"><span class="brand-mark" aria-hidden="true">▰</span><span>Native Pixels<span class="edition">ODIN / SDL3 / WEBGPU</span></span></a><nav class="rail-primary" aria-label="Book navigation"><a class="rail-link" href="../index.html"><span class="rail-label">Overview</span></a><a class="rail-link" href="../contents.html"><span class="rail-label">All chapters</span></a><a class="rail-link" href="../appendix/build.html"><span class="rail-label">Build the game</span></a></nav><div class="rail-context"><p class="rail-kicker">Chapter 12</p><a class="rail-title" href="#top">Let the vertex shader place the character</a><nav class="rail-sections" aria-label="Chapter sections"><a class="rail-link numbered" href="#section-1"><span class="rail-index">12.1</span><span class="rail-label">A layout is a promise; a binding fills it</span></a><a class="rail-link numbered" href="#section-2"><span class="rail-index">12.2</span><span class="rail-label">What changes and what stays the same</span></a><a class="rail-link numbered" href="#section-3"><span class="rail-index">12.3</span><span class="rail-label">Specify the host/shader memory contract</span></a><a class="rail-link numbered" href="#section-4"><span class="rail-index">12.4</span><span class="rail-label">Describe the interface, then attach actual storage</span></a><a class="rail-link numbered" href="#section-5"><span class="rail-index">12.5</span><span class="rail-label">Move the arithmetic, preserve the result</span></a><a class="rail-link numbered" href="#section-6"><span class="rail-index">12.6</span><span class="rail-label">One write does not wait for one draw</span></a><a class="rail-link numbered" href="#section-7"><span class="rail-index">12.7</span><span class="rail-label">When this work happens</span></a><a class="rail-link numbered" href="#section-8"><span class="rail-index">12.8</span><span class="rail-label">Read the symptom, test a hypothesis</span></a><a class="rail-link numbered" href="#section-9"><span class="rail-index">12.9</span><span class="rail-label">Experiments</span></a><a class="rail-link numbered" href="#section-10"><span class="rail-index">12.10</span><span class="rail-label">What we have now</span></a><a class="rail-link numbered" href="#section-11"><span class="rail-index">12.11</span><span class="rail-label">Challenges</span></a><a class="rail-link numbered" href="#section-12"><span class="rail-index">12.12</span><span class="rail-label">Exact code changes and runnable checkpoint</span></a></nav><div class="rail-prev-next"><a href="../chapters/11-coordinates-for-humans.html">← Previous</a><a href="../chapters/13-resize-without-stretching.html">Next →</a></div></div><div class="rail-reference"><p class="rail-kicker">Keep nearby</p><nav aria-label="Reference pages"><a class="rail-link" href="../appendix/final-source.html"><span class="rail-label">Complete final source</span></a><a class="rail-link" href="../appendix/glossary.html"><span class="rail-label">Glossary</span></a><a class="rail-link" href="../appendix/cheat-sheets.html"><span class="rail-label">Initialization, frame, and lifetime sheets</span></a><a class="rail-link" href="../appendix/sources.html"><span class="rail-label">Sources and verification record</span></a></nav></div></aside><div class="page-shell"><header class="topbar"><div class="breadcrumb"><a href="../index.html">Native Pixels</a><span aria-hidden="true">/</span><span>Chapter 12</span></div><div class="reader-controls"><button type="button" class="theme-toggle" hidden aria-label="Change color theme">Theme</button><button type="button" class="focus-toggle" hidden aria-pressed="false">Focus</button><a class="mobile-contents" href="../contents.html">Contents</a></div></header><main id="main" tabindex="-1"><article class="chapter"><header class="chapter-header"><span class="chapter-display-number" aria-hidden="true">12</span><p class="eyebrow">III · Build a small 2D renderer <span>Chapter 12 / 23</span></p><h1>Let the vertex shader place the character</h1><p class="deck">Keep geometry in place. Send the changing transform through a small, explicitly laid-out uniform buffer.</p><p class="reading-meta">8 min read + implementation · checkpoint 12</p></header><aside class="callout outcome"><strong>At the end of this chapter</strong><p>The same rectangle is positioned by WGSL using a 48-byte uniform and an explicit bind group.</p></aside><nav class="on-this-page" aria-label="On this page"><details><summary>In this chapter</summary><ol><li><a href="#section-1"><span>12.1</span> A layout is a promise; a binding fills it</a></li><li><a href="#section-2"><span>12.2</span> What changes and what stays the same</a></li><li><a href="#section-3"><span>12.3</span> Specify the host/shader memory contract</a></li><li><a href="#section-4"><span>12.4</span> Describe the interface, then attach actual storage</a></li><li><a href="#section-5"><span>12.5</span> Move the arithmetic, preserve the result</a></li><li><a href="#section-6"><span>12.6</span> One write does not wait for one draw</a></li><li><a href="#section-7"><span>12.7</span> When this work happens</a></li><li><a href="#section-8"><span>12.8</span> Read the symptom, test a hypothesis</a></li><li><a href="#section-9"><span>12.9</span> Experiments</a></li><li><a href="#section-10"><span>12.10</span> What we have now</a></li><li><a href="#section-11"><span>12.11</span> Challenges</a></li><li><a href="#section-12"><span>12.12</span> Exact code changes and runnable checkpoint</a></li></ol></details></nav><section class="learning-guide"><h2 id="section-1"><span class="section-number" aria-hidden="true">12.1</span>A layout is a promise; a binding fills it<a class="heading-link" href="#section-1" aria-label="Link to A layout is a promise; a binding fills it">#</a></h2><p>A uniform buffer stores a small block of values shared by a draw’s shader invocations. The bind group layout describes the permitted contents of numbered slots. A bind group fills those slots with actual resources. The pipeline layout arranges groups into the interface the shader expects. Creating these objects does not upload position values; QueueWriteBuffer does that separately.</p><p>Our shader reads group zero, binding zero. That slot refers to a 48-byte range in a persistent uniform buffer. Updating the position bytes changes the next draw’s input while the group continues to refer to exactly the same storage. We do not recreate a mailing address each time the contents at that address change.</p><p>Alignment means a value must begin at an address divisible by a required number of bytes. The layout table makes the host and shader agree. Buffer-binding offset alignment is a separate constraint; our range starts at zero, which meets any positive alignment requirement. A valid 48-byte struct does not automatically need a 256-byte allocation.</p></section><section><h2 id="section-2"><span class="section-number" aria-hidden="true">12.2</span>What changes and what stays the same<a class="heading-link" href="#section-2" aria-label="Link to What changes and what stays the same">#</a></h2><p>The unit-square vertices and six indices never change when our character moves. Only position, size, view extent, camera offset, and tint vary. Rather than rewrite vertex records, we can provide those few values through a uniform buffer: a GPU-readable resource whose values are shared by shader invocations for a draw.</p><p>“Uniform” describes how the shader accesses this data, not a claim that the bytes can never change. We will write fresh values each frame. The pipeline’s resource contract remains fixed, the bind group continues to refer to the same buffer, and the buffer contents change. This distinction is the practical reason WebGPU separates layouts, bindings, and resources.</p></section><section><h2 id="section-3"><span class="section-number" aria-hidden="true">12.3</span>Specify the host/shader memory contract<a class="heading-link" href="#section-3" aria-label="Link to Specify the host/shader memory contract">#</a></h2><p>Add <code>Uniforms</code> and its assertions in <code>renderer.odin</code>. Add the corresponding WGSL struct at the top of the shader, before <code>Vertex_Out</code>. Unlike the vertex layout, uniform memory layout is defined by WGSL’s host-shareable type rules, not by an array of vertex attributes.</p><figure class="code-block"><figcaption>src/renderer.odin · add the 48-byte uniform ABI</figcaption><pre><code class="language-odin">Uniforms :: struct #align(16) {
+    position: [2]f32,
+    size: [2]f32,
+    view_size: [2]f32,
+    camera: [2]f32,
+    tint: [4]f32,
+}
+#assert(size_of(Uniforms) == 48)
+#assert(offset_of(Uniforms, position) == 0)
+#assert(offset_of(Uniforms, size) == 8)
+#assert(offset_of(Uniforms, view_size) == 16)
+#assert(offset_of(Uniforms, camera) == 24)
+#assert(offset_of(Uniforms, tint) == 32)</code></pre></figure><figure class="code-block"><figcaption>shaders/character.wgsl · add the uniform resource</figcaption><pre><code class="language-wgsl">struct Uniforms {
+    position: vec2f,
+    size: vec2f,
+    view_size: vec2f,
+    camera: vec2f,
+    tint: vec4f,
+}
+@group(0) @binding(0) var&lt;uniform&gt; uniforms: Uniforms;</code></pre></figure><div class="table-scroll"><table><thead><tr><th scope="col">Member</th><th scope="col">Odin bytes</th><th scope="col">WGSL alignment / size</th></tr></thead><tbody><tr><td>position</td><td>0–7</td><td>vec2f: align 8, size 8</td></tr><tr><td>size</td><td>8–15</td><td>vec2f: align 8, size 8</td></tr><tr><td>view_size</td><td>16–23</td><td>vec2f: align 8, size 8</td></tr><tr><td>camera</td><td>24–31</td><td>vec2f: align 8, size 8</td></tr><tr><td>tint</td><td>32–47</td><td>vec4f: align 16, size 16</td></tr><tr><td>Whole struct</td><td>48 bytes, host alignment 16</td><td>Struct extent rounded to its required alignment</td></tr></tbody></table></div><p>The four vec2f members pack into the first 32 bytes, then the vec4f tint occupies 16 more. Odin’s <code>#align(16)</code> and the explicit offset/size assertions document the exact layout we upload. A vec3f is a classic source of mistakes because its alignment and payload size differ; we need no vec3f here. Replacing a field with another type requires recalculating offsets on both sides, not merely matching member names.</p><p>A buffer binding’s offset alignment is another rule, separate from member layout. Our binding starts at offset zero, so it satisfies the device’s uniform-offset alignment without padding the buffer to 256 bytes. A 48-byte uniform allocation is valid. If we later packed multiple objects into one buffer and selected aligned ranges, the start of each binding could need padding to the device’s <code>minUniformBufferOffsetAlignment</code>. That is not needed for one character.</p></section><section><h2 id="section-4"><span class="section-number" aria-hidden="true">12.4</span>Describe the interface, then attach actual storage<a class="heading-link" href="#section-4" aria-label="Link to Describe the interface, then attach actual storage">#</a></h2><p>Add <code>uniform_buffer</code> and <code>bind_group</code> handles to <code>Renderer</code>. In <code>renderer_init</code>, replace the empty pipeline-layout construction with this sequence. The shader module already exists at this point; the final render pipeline is created afterward.</p><figure class="code-block"><figcaption>src/renderer.odin · renderer_init · replace the empty resource interface</figcaption><pre><code class="language-odin">renderer.uniform_buffer = wgpu.DeviceCreateBuffer(gpu.device, &amp;wgpu.BufferDescriptor{
+        label = &quot;character uniforms&quot;, size = size_of(Uniforms), usage = {.Uniform, .CopyDst},
+    })
+    if renderer.uniform_buffer == nil { return false }
+    binding_layout := wgpu.BindGroupLayoutEntry{
+        binding = 0, visibility = {.Vertex},
+        buffer = {type = .Uniform, minBindingSize = size_of(Uniforms)},
+    }
+    group_layout := wgpu.DeviceCreateBindGroupLayout(gpu.device, &amp;wgpu.BindGroupLayoutDescriptor{
+        label = &quot;character resource interface&quot;, entryCount = 1, entries = &amp;binding_layout,
+    })
+    if group_layout == nil { return false }
+    defer wgpu.BindGroupLayoutRelease(group_layout)
+    entry := wgpu.BindGroupEntry{binding = 0, buffer = renderer.uniform_buffer, offset = 0, size = size_of(Uniforms)}
+    renderer.bind_group = wgpu.DeviceCreateBindGroup(gpu.device, &amp;wgpu.BindGroupDescriptor{
+        label = &quot;character resources&quot;, layout = group_layout, entryCount = 1, entries = &amp;entry,
+    })
+    if renderer.bind_group == nil { return false }
+    layout := wgpu.DeviceCreatePipelineLayout(gpu.device, &amp;wgpu.PipelineLayoutDescriptor{
+        label = &quot;character pipeline interface&quot;, bindGroupLayoutCount = 1, bindGroupLayouts = &amp;group_layout,
+    })</code></pre></figure><div class="table-scroll"><table><thead><tr><th scope="col">Object</th><th scope="col">Question it answers</th><th scope="col">Dependency</th></tr></thead><tbody><tr><td>Uniform buffer</td><td>Where do the 48 bytes live?</td><td>Device</td></tr><tr><td>Bind group layout</td><td>Which binding numbers, resource kinds, visibility, and minimum sizes are permitted?</td><td>Device and shader contract</td></tr><tr><td>Bind group</td><td>Which actual buffer/range fills binding zero?</td><td>Layout plus uniform buffer</td></tr><tr><td>Pipeline layout</td><td>Which bind group layout is group zero?</td><td>Ordered list of bind group layouts</td></tr><tr><td>Render pipeline</td><td>Which shaders and fixed state use that resource interface?</td><td>Pipeline layout, shader stages, target configuration</td></tr></tbody></table></div><p>The layout entry’s <code>binding = 0</code> matches WGSL <code>@binding(0)</code>. Vertex visibility means the vertex stage may read it; our fragment stage consumes the interpolated tinted color instead of directly accessing the buffer. The entry’s buffer type is Uniform, with a minimum binding size of 48. The bind group then attaches the actual buffer at byte offset zero with range 48. It does not copy the uniform bytes or freeze their current value.</p><p>The pipeline layout contains one layout at array position zero, which matches <code>@group(0)</code>. That position is the group number; it is not the binding number within the group. Both happen to be zero because we have exactly one of each. If the interface is wrong, pipeline validation or draw validation can reject the shader/resource combination before it accesses arbitrary memory.</p></section><section><h2 id="section-5"><span class="section-number" aria-hidden="true">12.5</span>Move the arithmetic, preserve the result<a class="heading-link" href="#section-5" aria-label="Link to Move the arithmetic, preserve the result">#</a></h2><p>Remove the temporary CPU vertex transform and its per-frame vertex upload. Replace that section of <code>renderer_frame</code> with a uniform value and write. The one-time vertex upload in <code>renderer_init</code> stays; it now holds unit-square local positions for every frame.</p><figure class="code-block"><figcaption>src/renderer.odin · renderer_frame · replace the temporary vertex rewrite</figcaption><pre><code class="language-odin">uniforms := Uniforms{
+        position = {120, 100}, size = {48, 64},
+        view_size = {f32(gpu.config.width), f32(gpu.config.height)},
+        camera = {0, 0}, tint = {1, 1, 1, 1},
+    }
+    wgpu.QueueWriteBuffer(gpu.queue, renderer.uniform_buffer, 0, &amp;uniforms, size_of(uniforms))</code></pre></figure><figure class="code-block"><figcaption>shaders/character.wgsl · fn vs_main</figcaption><pre><code class="language-wgsl">fn vs_main(@location(0) position: vec2f, @location(1) color: vec4f) -&gt; Vertex_Out {
+    var out: Vertex_Out;
+    let pixel = uniforms.position + position * uniforms.size - uniforms.camera;
+    let ndc = vec2f(2.0 * pixel.x / uniforms.view_size.x - 1.0,
+                   1.0 - 2.0 * pixel.y / uniforms.view_size.y);
+    out.clip_position = vec4f(ndc, 0.0, 1.0);
+    out.color = color * uniforms.tint;
+    return out;
+}</code></pre></figure><p>WGSL now performs the same multiply/add and pixel-to-NDC conversion as the previous CPU code. Subtracting <code>camera</code> defines a simple translation-only camera: if the camera moves right, a stationary world object appears farther left. Its default is (0,0). A matrix is still unnecessary because scale and translation remain compact and obvious. Rotation or many composed transforms could justify matrices later; this project does not need them.</p><p>Immediately after setting the pipeline, add <code>RenderPassEncoderSetBindGroup(pass, 0, renderer.bind_group)</code>. The call binds actual resources to group zero for the upcoming draw. No dynamic offsets are supplied. Native descriptor pointers can expire after creation, but the returned bind group and the uniform buffer must remain usable for subsequent frames. Release the bind group and buffer in <code>renderer_destroy</code>. Our references to the group layout and pipeline layout can be released at the end of initialization.</p></section><section><h2 id="section-6"><span class="section-number" aria-hidden="true">12.6</span>One write does not wait for one draw<a class="heading-link" href="#section-6" aria-label="Link to One write does not wait for one draw">#</a></h2><p><code>QueueWriteBuffer</code> orders the data update before the next submission on that queue. Reusing this uniform buffer across successive frames is valid under that ordering. Do not insert a GPU-wide wait just to “make sure the new position arrived.” Conversely, writing two object transforms before a single submission does not make two draws automatically remember different versions: both draws can observe the last data written before them in queue order. Multiple objects would need distinct ranges, dynamic offsets, or another explicitly ordered strategy. We have one draw and one update.</p><aside class="callout note"><strong>Why no storage buffer?</strong><p>A storage buffer can expose larger arrays or writable shader data, but our shader needs a tiny read-only parameter block. Uniforms are sufficient. Adding storage here would teach a feature without solving a problem the character has.</p></aside></section><section><h2 id="section-7"><span class="section-number" aria-hidden="true">12.7</span>When this work happens<a class="heading-link" href="#section-7" aria-label="Link to When this work happens">#</a></h2><div class="table-scroll"><table><thead><tr><th scope="col">Operation</th><th scope="col">Frequency</th><th scope="col">Reason</th></tr></thead><tbody><tr><td>Uniform allocation, layouts, bind group</td><td>Initialization</td><td>Stable resource interface and storage</td></tr><tr><td>Write 48 uniform bytes</td><td>Every rendered frame</td><td>Transfer changing position and view information</td></tr><tr><td>Set bind group</td><td>Per draw setup</td><td>Connect the pipeline interface to actual resources</td></tr><tr><td>Vertex transform</td><td>GPU vertex stage</td><td>Turn stable local geometry into this frame’s clip positions</td></tr></tbody></table></div></section><section><h2 id="section-8"><span class="section-number" aria-hidden="true">12.8</span>Read the symptom, test a hypothesis<a class="heading-link" href="#section-8" aria-label="Link to Read the symptom, test a hypothesis">#</a></h2><div class="table-scroll"><table><thead><tr><th scope="col">Symptom</th><th scope="col">What to inspect</th><th scope="col">Why it matters</th></tr></thead><tbody><tr><td>Character vanishes when uniforms are introduced</td><td>Host offsets, WGSL layout, binding range, and group selection</td><td>A zero or misplaced view_size can invalidate every transformed coordinate</td></tr><tr><td>Validation says binding not visible</td><td>Vertex stage visibility</td><td>The layout is permission for stage access</td></tr><tr><td>Movement later changes CPU position only</td><td>The per-frame uniform write</td><td>Changing an Odin struct does not alter GPU storage automatically</td></tr></tbody></table></div></section><section><h2 id="section-9"><span class="section-number" aria-hidden="true">12.9</span>Experiments<a class="heading-link" href="#section-9" aria-label="Link to Experiments">#</a></h2><p>These short, optional checks help you test the explanation. Predict the result first, then run the program. Restore the chapter’s baseline before continuing; later chapters assume the supplied checkpoint.</p><ol><li>Set camera to (100,0). Predict the character’s displayed x without changing its world position.</li><li>Set tint to (1,0.5,0.5,1). Explain why the bind group need not be recreated.</li><li>Compare the four projected corners with chapter 11. The arithmetic moved to the GPU; the intended positions did not change.</li></ol></section><section><h2 id="section-10"><span class="section-number" aria-hidden="true">12.10</span>What we have now<a class="heading-link" href="#section-10" aria-label="Link to What we have now">#</a></h2><p>The same rectangle is positioned by WGSL using a 48-byte uniform and an explicit bind group.</p><p>Before moving on, run this checkpoint and compare it with the stated result. If it differs, use the symptom table above or the complete files below to locate the missing step.</p><p>Run <code>odin run checkpoints/12/src</code> from the book root, with the SDL linker flags for your platform. <a href="../appendix/build.html">Dependency and build instructions →</a></p></section><section class="challenges"><h2 id="section-11"><span class="section-number" aria-hidden="true">12.11</span>Challenges<a class="heading-link" href="#section-11" aria-label="Link to Challenges">#</a></h2><p class="challenge-intro">Optional extensions. The complete game in chapter 23 requires none of these. Work in a separate copy if you want to explore; the next chapter starts from this chapter’s supplied baseline.</p><ol><li><h3>A scrolling camera</h3><p>Use the existing camera field to pan the view with separate keys. Leave character position unchanged and upload the camera through the same uniform buffer.</p><p class="challenge-check"><strong>Check your result:</strong> Panning affects projection while game coordinates retain their meaning.</p></li><li><h3>Two independent characters</h3><p>Create a second uniform buffer and bind group with the same layout, then bind each before its draw. Give the characters different positions and tints.</p><p class="challenge-check"><strong>Check your result:</strong> Both characters keep independent transforms; writing one shared buffer twice before submission is not used as a substitute.</p></li></ol></section><section><h2 id="section-12"><span class="section-number" aria-hidden="true">12.12</span>Exact code changes and runnable checkpoint<a class="heading-link" href="#section-12" aria-label="Link to Exact code changes and runnable checkpoint">#</a></h2><div class="table-scroll"><table><thead><tr><th scope="col">File</th><th scope="col">Operation</th></tr></thead><tbody><tr><td><code>src/renderer.odin</code></td><td>Replace the changed portions shown below; preserve all other code</td></tr><tr><td><code>shaders/character.wgsl</code></td><td>Replace the changed portions shown below; preserve all other code</td></tr></tbody></table></div><details class="change-record"><summary>Exact patch from the preceding checkpoint</summary><p><a download href="../checkpoints/12/changes.patch">Download changes.patch</a> · inspect or apply with <code>patch -p1</code> from your own project directory at the previous checkpoint.</p><figure class="code-block"><pre><code class="language-diff">--- before/src/renderer.odin
++++ after/src/renderer.odin
+@@ -5,14 +5,12 @@
+ 
+ renderer_frame :: proc(gpu: ^GPU, window: ^sdl.Window, renderer: ^Renderer) -&gt; bool {
+     if !gpu_refresh_surface(gpu, window) { sdl.Delay(10); return !gpu_failed() }
+-    // Temporary: transform and upload all four vertices on the CPU.
+-    vertices := VERTICES
+-    for &amp;vertex in vertices {
+-        pixel := [2]f32{120, 100} + vertex.position * [2]f32{48, 64}
+-        vertex.position = {2 * pixel.x / f32(gpu.config.width) - 1,
+-                           1 - 2 * pixel.y / f32(gpu.config.height)}
++    uniforms := Uniforms{
++        position = {120, 100}, size = {48, 64},
++        view_size = {f32(gpu.config.width), f32(gpu.config.height)},
++        camera = {0, 0}, tint = {1, 1, 1, 1},
+     }
+-    wgpu.QueueWriteBuffer(gpu.queue, renderer.vertex_buffer, 0, &amp;vertices, size_of(vertices))
++    wgpu.QueueWriteBuffer(gpu.queue, renderer.uniform_buffer, 0, &amp;uniforms, size_of(uniforms))
+     frame := wgpu.SurfaceGetCurrentTexture(gpu.platform.surface)
+     // Release any returned handle on every exit path, including a failed acquisition.
+     defer if frame.texture != nil { wgpu.TextureRelease(frame.texture) }
+@@ -46,6 +44,7 @@
+     if pass == nil { return false }
+     defer wgpu.RenderPassEncoderRelease(pass)
+     wgpu.RenderPassEncoderSetPipeline(pass, renderer.pipeline)
++    wgpu.RenderPassEncoderSetBindGroup(pass, 0, renderer.bind_group)
+     wgpu.RenderPassEncoderSetVertexBuffer(pass, 0, renderer.vertex_buffer, 0, size_of(VERTICES))
+     wgpu.RenderPassEncoderSetIndexBuffer(pass, renderer.index_buffer, .Uint16, 0, size_of(INDICES))
+     wgpu.RenderPassEncoderDrawIndexed(pass, 6, 1, 0, 0, 0)
+@@ -78,10 +77,26 @@
+ }
+ INDICES :: [6]u16{0, 1, 2, 0, 2, 3}
+ 
++Uniforms :: struct #align(16) {
++    position: [2]f32,
++    size: [2]f32,
++    view_size: [2]f32,
++    camera: [2]f32,
++    tint: [4]f32,
++}
++#assert(size_of(Uniforms) == 48)
++#assert(offset_of(Uniforms, position) == 0)
++#assert(offset_of(Uniforms, size) == 8)
++#assert(offset_of(Uniforms, view_size) == 16)
++#assert(offset_of(Uniforms, camera) == 24)
++#assert(offset_of(Uniforms, tint) == 32)
++
+ Renderer :: struct {
+     pipeline: wgpu.RenderPipeline,
+     vertex_buffer: wgpu.Buffer,
+     index_buffer: wgpu.Buffer,
++    uniform_buffer: wgpu.Buffer,
++    bind_group: wgpu.BindGroup,
+ }
+ 
+ renderer_init :: proc(renderer: ^Renderer, gpu: ^GPU) -&gt; bool {
+@@ -106,8 +121,26 @@
+     if shader == nil { return false }
+     defer wgpu.ShaderModuleRelease(shader)
+     if gpu_failed() { return false }
++    renderer.uniform_buffer = wgpu.DeviceCreateBuffer(gpu.device, &amp;wgpu.BufferDescriptor{
++        label = &quot;character uniforms&quot;, size = size_of(Uniforms), usage = {.Uniform, .CopyDst},
++    })
++    if renderer.uniform_buffer == nil { return false }
++    binding_layout := wgpu.BindGroupLayoutEntry{
++        binding = 0, visibility = {.Vertex},
++        buffer = {type = .Uniform, minBindingSize = size_of(Uniforms)},
++    }
++    group_layout := wgpu.DeviceCreateBindGroupLayout(gpu.device, &amp;wgpu.BindGroupLayoutDescriptor{
++        label = &quot;character resource interface&quot;, entryCount = 1, entries = &amp;binding_layout,
++    })
++    if group_layout == nil { return false }
++    defer wgpu.BindGroupLayoutRelease(group_layout)
++    entry := wgpu.BindGroupEntry{binding = 0, buffer = renderer.uniform_buffer, offset = 0, size = size_of(Uniforms)}
++    renderer.bind_group = wgpu.DeviceCreateBindGroup(gpu.device, &amp;wgpu.BindGroupDescriptor{
++        label = &quot;character resources&quot;, layout = group_layout, entryCount = 1, entries = &amp;entry,
++    })
++    if renderer.bind_group == nil { return false }
+     layout := wgpu.DeviceCreatePipelineLayout(gpu.device, &amp;wgpu.PipelineLayoutDescriptor{
+-        label = &quot;empty resource interface&quot;,
++        label = &quot;character pipeline interface&quot;, bindGroupLayoutCount = 1, bindGroupLayouts = &amp;group_layout,
+     })
+     if layout == nil { return false }
+     defer wgpu.PipelineLayoutRelease(layout)
+@@ -133,6 +166,8 @@
+ }
+ 
+ renderer_destroy :: proc(renderer: ^Renderer) {
++    if renderer.bind_group != nil { wgpu.BindGroupRelease(renderer.bind_group) }
++    if renderer.uniform_buffer != nil { wgpu.BufferRelease(renderer.uniform_buffer) }
+     if renderer.index_buffer != nil { wgpu.BufferRelease(renderer.index_buffer) }
+     if renderer.vertex_buffer != nil { wgpu.BufferRelease(renderer.vertex_buffer) }
+     if renderer.pipeline != nil { wgpu.RenderPipelineRelease(renderer.pipeline) }
+--- before/shaders/character.wgsl
++++ after/shaders/character.wgsl
+@@ -1,3 +1,12 @@
++struct Uniforms {
++    position: vec2f,
++    size: vec2f,
++    view_size: vec2f,
++    camera: vec2f,
++    tint: vec4f,
++}
++@group(0) @binding(0) var&lt;uniform&gt; uniforms: Uniforms;
++
+ struct Vertex_Out {
+     @builtin(position) clip_position: vec4f,
+     @location(0) color: vec4f,
+@@ -6,8 +15,11 @@
+ @vertex
+ fn vs_main(@location(0) position: vec2f, @location(1) color: vec4f) -&gt; Vertex_Out {
+     var out: Vertex_Out;
+-    out.clip_position = vec4f(position, 0.0, 1.0);
+-    out.color = color;
++    let pixel = uniforms.position + position * uniforms.size - uniforms.camera;
++    let ndc = vec2f(2.0 * pixel.x / uniforms.view_size.x - 1.0,
++                   1.0 - 2.0 * pixel.y / uniforms.view_size.y);
++    out.clip_position = vec4f(ndc, 0.0, 1.0);
++    out.color = color * uniforms.tint;
+     return out;
+ }</code></pre></figure></details><p>Complete end-of-chapter files follow. These are already present in <code>checkpoints/12/</code>; no assembly from excerpts is required.</p><details class="source-file"><summary>src/main.odin <span>47 lines</span></summary><p><a download href="../checkpoints/12/src/main.odin">Download this checkpoint’s src/main.odin</a></p><figure class="code-block"><figcaption>checkpoints/12/src/main.odin · complete file</figcaption><pre><code class="language-odin" data-source="checkpoints/12/src/main.odin">package character
+import &quot;core:fmt&quot;
+import sdl &quot;vendor:sdl3&quot;
+import wgpu &quot;vendor:wgpu&quot;
+
+main :: proc() {
+    if !sdl.Init({.VIDEO}) {
+        fmt.eprintln(&quot;SDL initialization:&quot;, sdl.GetError())
+        return
+    }
+    defer sdl.Quit()
+    flags: sdl.WindowFlags = {}
+    when ODIN_OS == .Darwin { flags += {.METAL} }
+    window := sdl.CreateWindow(&quot;Native Pixels&quot;, 960, 640, flags)
+    if window == nil {
+        fmt.eprintln(&quot;Window creation:&quot;, sdl.GetError())
+        return
+    }
+    defer sdl.DestroyWindow(window)
+    if !sdl.ShowWindow(window) {
+        fmt.eprintln(&quot;Show window:&quot;, sdl.GetError())
+        return
+    }
+    if !sdl.RaiseWindow(window) { fmt.eprintln(&quot;Window focus request:&quot;, sdl.GetError()) }
+
+    gpu: GPU
+    defer gpu_destroy(&amp;gpu)
+    if !gpu_init(&amp;gpu, window) { return }
+
+    renderer: Renderer
+    defer renderer_destroy(&amp;renderer)
+    if !renderer_init(&amp;renderer, &amp;gpu) { return }
+
+    running := true
+    for running {
+        event: sdl.Event
+        for sdl.PollEvent(&amp;event) {
+            #partial switch event.type {
+            case .QUIT, .WINDOW_CLOSE_REQUESTED: running = false
+            }
+        }
+        if !running { break }
+        wgpu.InstanceProcessEvents(gpu.instance)
+        if gpu_failed() { break }
+        if !renderer_frame(&amp;gpu, window, &amp;renderer) { break }
+    }
+}
+</code></pre></figure></details><details class="source-file"><summary>src/platform.odin <span>73 lines</span></summary><p><a download href="../checkpoints/12/src/platform.odin">Download this checkpoint’s src/platform.odin</a></p><figure class="code-block"><figcaption>checkpoints/12/src/platform.odin · complete file</figcaption><pre><code class="language-odin" data-source="checkpoints/12/src/platform.odin">package character
+import &quot;core:fmt&quot;
+import sdl &quot;vendor:sdl3&quot;
+import wgpu &quot;vendor:wgpu&quot;
+
+// SDL owns the window. We own this extra Metal view, when one exists.
+Platform_Surface :: struct {
+    surface: wgpu.Surface,
+    metal_view: sdl.MetalView, // nil on Windows and Linux
+}
+
+platform_surface_create :: proc(instance: wgpu.Instance, window: ^sdl.Window) -&gt; Platform_Surface {
+    result: Platform_Surface
+    when ODIN_OS == .Darwin {
+        result.metal_view = sdl.Metal_CreateView(window)
+        if result.metal_view == nil {
+            fmt.eprintln(&quot;Metal view:&quot;, sdl.GetError())
+            return result
+        }
+        layer := sdl.Metal_GetLayer(result.metal_view)
+        if layer == nil { return result }
+        source := wgpu.SurfaceSourceMetalLayer{
+            chain = {sType = .SurfaceSourceMetalLayer}, layer = layer,
+        }
+        descriptor := wgpu.SurfaceDescriptor{nextInChain = &amp;source.chain, label = &quot;SDL Metal surface&quot;}
+        result.surface = wgpu.InstanceCreateSurface(instance, &amp;descriptor)
+    } else when ODIN_OS == .Windows {
+        properties := sdl.GetWindowProperties(window)
+        hwnd := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_WIN32_HWND_POINTER, nil)
+        instance_handle := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_WIN32_INSTANCE_POINTER, nil)
+        if hwnd == nil || instance_handle == nil { return result }
+        source := wgpu.SurfaceSourceWindowsHWND{
+            chain = {sType = .SurfaceSourceWindowsHWND}, hwnd = hwnd, hinstance = instance_handle,
+        }
+        descriptor := wgpu.SurfaceDescriptor{nextInChain = &amp;source.chain, label = &quot;SDL Win32 surface&quot;}
+        result.surface = wgpu.InstanceCreateSurface(instance, &amp;descriptor)
+    } else when ODIN_OS == .Linux {
+        properties := sdl.GetWindowProperties(window)
+        switch sdl.GetCurrentVideoDriver() {
+        case &quot;wayland&quot;:
+            display := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_WAYLAND_DISPLAY_POINTER, nil)
+            surface := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_WAYLAND_SURFACE_POINTER, nil)
+            if display == nil || surface == nil { return result }
+            source := wgpu.SurfaceSourceWaylandSurface{
+                chain = {sType = .SurfaceSourceWaylandSurface}, display = display, surface = surface,
+            }
+            descriptor := wgpu.SurfaceDescriptor{nextInChain = &amp;source.chain, label = &quot;SDL Wayland surface&quot;}
+            result.surface = wgpu.InstanceCreateSurface(instance, &amp;descriptor)
+        case &quot;x11&quot;:
+            display := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_X11_DISPLAY_POINTER, nil)
+            window_id := sdl.GetNumberProperty(properties, sdl.PROP_WINDOW_X11_WINDOW_NUMBER, 0)
+            if display == nil || window_id == 0 { return result }
+            source := wgpu.SurfaceSourceXlibWindow{
+                chain = {sType = .SurfaceSourceXlibWindow}, display = display, window = u64(window_id),
+            }
+            descriptor := wgpu.SurfaceDescriptor{nextInChain = &amp;source.chain, label = &quot;SDL X11 surface&quot;}
+            result.surface = wgpu.InstanceCreateSurface(instance, &amp;descriptor)
+        case:
+            fmt.eprintln(&quot;Unsupported SDL video driver:&quot;, sdl.GetCurrentVideoDriver())
+        }
+    } else {
+        #panic(&quot;This book targets macOS, Windows, and Linux desktop windows&quot;)
+    }
+    return result
+}
+
+platform_surface_destroy :: proc(platform: ^Platform_Surface) {
+    if platform.surface != nil { wgpu.SurfaceRelease(platform.surface) }
+    when ODIN_OS == .Darwin {
+        if platform.metal_view != nil { sdl.Metal_DestroyView(platform.metal_view) }
+    }
+    platform^ = {}
+}
+</code></pre></figure></details><details class="source-file"><summary>src/gpu.odin <span>172 lines</span></summary><p><a download href="../checkpoints/12/src/gpu.odin">Download this checkpoint’s src/gpu.odin</a></p><figure class="code-block"><figcaption>checkpoints/12/src/gpu.odin · complete file</figcaption><pre><code class="language-odin" data-source="checkpoints/12/src/gpu.odin">package character
+import &quot;core:fmt&quot;
+import &quot;core:c&quot;
+import &quot;base:runtime&quot;
+import &quot;base:intrinsics&quot;
+import sdl &quot;vendor:sdl3&quot;
+import wgpu &quot;vendor:wgpu&quot;
+
+GPU :: struct {
+    instance: wgpu.Instance,
+    platform: Platform_Surface,
+    adapter: wgpu.Adapter,
+    device: wgpu.Device,
+    queue: wgpu.Queue,
+    adapter_done, device_done: bool,
+    config: wgpu.SurfaceConfiguration,
+    configured, dirty: bool,
+    max_texture_dimension: u32,
+}
+
+gpu_init :: proc(gpu: ^GPU, window: ^sdl.Window) -&gt; bool {
+    gpu.instance = wgpu.CreateInstance(nil)
+    if gpu.instance == nil {
+        fmt.eprintln(&quot;Cannot create a WebGPU instance&quot;)
+        return false
+    }
+    gpu.platform = platform_surface_create(gpu.instance, window)
+    if gpu.platform.surface == nil {
+        fmt.eprintln(&quot;Cannot connect WebGPU to the SDL window&quot;)
+        return false
+    }
+    if !gpu_request_device(gpu) { return false }
+    if !gpu_choose_surface(gpu) { return false }
+    gpu.dirty = true
+    _ = gpu_refresh_surface(gpu, window)
+    return !gpu_failed()
+}
+
+gpu_destroy :: proc(gpu: ^GPU) {
+    if gpu.device != nil { _ = wgpu.DevicePoll(gpu.device, true, nil) }
+    if gpu.configured { wgpu.SurfaceUnconfigure(gpu.platform.surface) }
+    if gpu.queue != nil { wgpu.QueueRelease(gpu.queue) }
+    if gpu.device != nil { wgpu.DeviceRelease(gpu.device) }
+    if gpu.adapter != nil { wgpu.AdapterRelease(gpu.adapter) }
+    platform_surface_destroy(&amp;gpu.platform)
+    if gpu.instance != nil { wgpu.InstanceRelease(gpu.instance) }
+    gpu^ = {}
+}
+
+// Process-lifetime storage: native diagnostic callbacks may arrive on other threads.
+gpu_fault: bool
+
+gpu_failed :: proc() -&gt; bool { return intrinsics.atomic_load(&amp;gpu_fault) }
+
+adapter_ready :: proc &quot;c&quot; (status: wgpu.RequestAdapterStatus, adapter: wgpu.Adapter,
+                          message: wgpu.StringView, userdata1, userdata2: rawptr) {
+    context = runtime.default_context()
+    gpu := cast(^GPU)userdata1
+    gpu.adapter_done = true
+    if status == .Success { gpu.adapter = adapter }
+    else { fmt.eprintln(&quot;Adapter request:&quot;, status, message) }
+}
+
+device_ready :: proc &quot;c&quot; (status: wgpu.RequestDeviceStatus, device: wgpu.Device,
+                         message: wgpu.StringView, userdata1, userdata2: rawptr) {
+    context = runtime.default_context()
+    gpu := cast(^GPU)userdata1
+    gpu.device_done = true
+    if status == .Success { gpu.device = device }
+    else { fmt.eprintln(&quot;Device request:&quot;, status, message) }
+}
+
+device_lost :: proc &quot;c&quot; (device: ^wgpu.Device, reason: wgpu.DeviceLostReason,
+                        message: wgpu.StringView, userdata1, userdata2: rawptr) {
+    context = runtime.default_context()
+    if reason == .Destroyed { return }
+    fmt.eprintln(&quot;Device lost:&quot;, reason, message)
+    intrinsics.atomic_store(&amp;gpu_fault, true)
+}
+
+uncaptured_error :: proc &quot;c&quot; (device: ^wgpu.Device, error_type: wgpu.ErrorType,
+                             message: wgpu.StringView, userdata1, userdata2: rawptr) {
+    context = runtime.default_context()
+    fmt.eprintln(&quot;WebGPU error:&quot;, error_type, message)
+    intrinsics.atomic_store(&amp;gpu_fault, true)
+}
+
+gpu_request_device :: proc(gpu: ^GPU) -&gt; bool {
+    options := wgpu.RequestAdapterOptions{
+        compatibleSurface = gpu.platform.surface,
+        powerPreference = .HighPerformance,
+        featureLevel = .Core,
+    }
+    _ = wgpu.InstanceRequestAdapter(gpu.instance, &amp;options, {
+        mode = .AllowSpontaneos, callback = adapter_ready, userdata1 = gpu,
+    })
+    // Verified wgpu-native 29.0.1.1 behavior: these two request callbacks run inline.
+    // Do not carry this assumption to Dawn or to a later native implementation.
+    assert(gpu.adapter_done, &quot;Pinned wgpu-native request contract changed&quot;)
+    if gpu.adapter == nil { return false }
+    descriptor := wgpu.DeviceDescriptor{
+        label = &quot;2D device&quot;, defaultQueue = {label = &quot;2D queue&quot;},
+        deviceLostCallbackInfo = {mode = .AllowSpontaneos, callback = device_lost},
+        uncapturedErrorCallbackInfo = {callback = uncaptured_error},
+    }
+    _ = wgpu.AdapterRequestDevice(gpu.adapter, &amp;descriptor, {
+        mode = .AllowSpontaneos, callback = device_ready, userdata1 = gpu,
+    })
+    assert(gpu.device_done, &quot;Pinned wgpu-native request contract changed&quot;)
+    if gpu.device == nil { return false }
+    gpu.queue = wgpu.DeviceGetQueue(gpu.device)
+    return gpu.queue != nil &amp;&amp; !gpu_failed()
+}
+
+gpu_choose_surface :: proc(gpu: ^GPU) -&gt; bool {
+    caps, status := wgpu.SurfaceGetCapabilities(gpu.platform.surface, gpu.adapter)
+    if status != .Success {
+        fmt.eprintln(&quot;Surface capabilities unavailable:&quot;, status)
+        return false
+    }
+    defer wgpu.SurfaceCapabilitiesFreeMembers(caps)
+    format: wgpu.TextureFormat = .Undefined
+    for candidate in caps.formats[:caps.formatCount] {
+        if candidate == .BGRA8UnormSrgb || candidate == .RGBA8UnormSrgb {
+            format = candidate
+            break
+        }
+    }
+    if format == .Undefined || !(.RenderAttachment in caps.usages) {
+        fmt.eprintln(&quot;This example needs an sRGB RGBA/BGRA renderable surface&quot;)
+        return false
+    }
+    fifo := false
+    for mode in caps.presentModes[:caps.presentModeCount] {
+        if mode == .Fifo { fifo = true }
+    }
+    if !fifo { fmt.eprintln(&quot;Surface does not offer FIFO presentation&quot;); return false }
+    alpha: wgpu.CompositeAlphaMode = .Auto
+    for mode in caps.alphaModes[:caps.alphaModeCount] {
+        if mode == .Opaque { alpha = .Opaque }
+    }
+    limits, limit_status := wgpu.DeviceGetLimits(gpu.device)
+    if limit_status != .Success { return false }
+    gpu.max_texture_dimension = limits.maxTextureDimension2D
+    gpu.config = {
+        device = gpu.device, format = format, usage = {.RenderAttachment},
+        presentMode = .Fifo, alphaMode = alpha,
+    }
+    fmt.println(&quot;Surface format:&quot;, format)
+    return true
+}
+
+gpu_refresh_surface :: proc(gpu: ^GPU, window: ^sdl.Window) -&gt; bool {
+    width, height: c.int
+    if !sdl.GetWindowSizeInPixels(window, &amp;width, &amp;height) {
+        fmt.eprintln(&quot;Drawable size:&quot;, sdl.GetError())
+        intrinsics.atomic_store(&amp;gpu_fault, true)
+        return false
+    }
+    if width &lt;= 0 || height &lt;= 0 { return false }
+    if u32(width) &gt; gpu.max_texture_dimension || u32(height) &gt; gpu.max_texture_dimension {
+        return false
+    }
+    if gpu.dirty || !gpu.configured || gpu.config.width != u32(width) || gpu.config.height != u32(height) {
+        gpu.config.width = u32(width)
+        gpu.config.height = u32(height)
+        wgpu.SurfaceConfigure(gpu.platform.surface, &amp;gpu.config)
+        gpu.configured = !gpu_failed()
+        gpu.dirty = false
+    }
+    return gpu.configured
+}
+</code></pre></figure></details><details class="source-file"><summary>src/renderer.odin <span>175 lines</span></summary><p><a download href="../checkpoints/12/src/renderer.odin">Download this checkpoint’s src/renderer.odin</a></p><figure class="code-block"><figcaption>checkpoints/12/src/renderer.odin · complete file</figcaption><pre><code class="language-odin" data-source="checkpoints/12/src/renderer.odin">package character
+import &quot;core:fmt&quot;
+import sdl &quot;vendor:sdl3&quot;
+import wgpu &quot;vendor:wgpu&quot;
+
+renderer_frame :: proc(gpu: ^GPU, window: ^sdl.Window, renderer: ^Renderer) -&gt; bool {
+    if !gpu_refresh_surface(gpu, window) { sdl.Delay(10); return !gpu_failed() }
+    uniforms := Uniforms{
+        position = {120, 100}, size = {48, 64},
+        view_size = {f32(gpu.config.width), f32(gpu.config.height)},
+        camera = {0, 0}, tint = {1, 1, 1, 1},
+    }
+    wgpu.QueueWriteBuffer(gpu.queue, renderer.uniform_buffer, 0, &amp;uniforms, size_of(uniforms))
+    frame := wgpu.SurfaceGetCurrentTexture(gpu.platform.surface)
+    // Release any returned handle on every exit path, including a failed acquisition.
+    defer if frame.texture != nil { wgpu.TextureRelease(frame.texture) }
+    #partial switch frame.status {
+    case .SuccessOptimal:
+    case .SuccessSuboptimal: gpu.dirty = true
+    case .Timeout, .Occluded: sdl.Delay(10); return true
+    case .Outdated: gpu.dirty = true; sdl.Delay(10); return true
+    case .Lost:
+        fmt.eprintln(&quot;Surface lost; close and restart this small example&quot;)
+        return false
+    case:
+        fmt.eprintln(&quot;Surface acquisition:&quot;, frame.status)
+        return false
+    }
+    if frame.texture == nil { fmt.eprintln(&quot;Successful acquisition without a texture&quot;); return false }
+    view := wgpu.TextureCreateView(frame.texture, nil)
+    if view == nil { return false }
+    defer wgpu.TextureViewRelease(view)
+    encoder := wgpu.DeviceCreateCommandEncoder(gpu.device, &amp;wgpu.CommandEncoderDescriptor{label = &quot;frame&quot;})
+    if encoder == nil { return false }
+    defer wgpu.CommandEncoderRelease(encoder)
+    attachment := wgpu.RenderPassColorAttachment{
+        view = view, depthSlice = wgpu.DEPTH_SLICE_UNDEFINED,
+        loadOp = .Clear, storeOp = .Store, clearValue = {0.018, 0.028, 0.048, 1},
+    }
+    pass_descriptor := wgpu.RenderPassDescriptor{
+        label = &quot;window color pass&quot;, colorAttachmentCount = 1, colorAttachments = &amp;attachment,
+    }
+    pass := wgpu.CommandEncoderBeginRenderPass(encoder, &amp;pass_descriptor)
+    if pass == nil { return false }
+    defer wgpu.RenderPassEncoderRelease(pass)
+    wgpu.RenderPassEncoderSetPipeline(pass, renderer.pipeline)
+    wgpu.RenderPassEncoderSetBindGroup(pass, 0, renderer.bind_group)
+    wgpu.RenderPassEncoderSetVertexBuffer(pass, 0, renderer.vertex_buffer, 0, size_of(VERTICES))
+    wgpu.RenderPassEncoderSetIndexBuffer(pass, renderer.index_buffer, .Uint16, 0, size_of(INDICES))
+    wgpu.RenderPassEncoderDrawIndexed(pass, 6, 1, 0, 0, 0)
+    wgpu.RenderPassEncoderEnd(pass)
+    commands := wgpu.CommandEncoderFinish(encoder, &amp;wgpu.CommandBufferDescriptor{label = &quot;finished frame&quot;})
+    if commands == nil { return false }
+    defer wgpu.CommandBufferRelease(commands)
+    if gpu_failed() { return false }
+    wgpu.QueueSubmit(gpu.queue, []wgpu.CommandBuffer{commands})
+    if wgpu.SurfacePresent(gpu.platform.surface) != .Success {
+        fmt.eprintln(&quot;Surface presentation failed&quot;)
+        return false
+    }
+    return !gpu_failed()
+}
+
+Vertex :: struct {
+    position: [2]f32,
+    color: [4]f32,
+}
+#assert(size_of(Vertex) == 24)
+#assert(offset_of(Vertex, position) == 0)
+#assert(offset_of(Vertex, color) == 8)
+
+VERTICES :: [4]Vertex{
+    {{0, 0}, {0.12, 0.78, 0.55, 1}},
+    {{1, 0}, {0.12, 0.78, 0.55, 1}},
+    {{1, 1}, {0.12, 0.78, 0.55, 1}},
+    {{0, 1}, {0.12, 0.78, 0.55, 1}},
+}
+INDICES :: [6]u16{0, 1, 2, 0, 2, 3}
+
+Uniforms :: struct #align(16) {
+    position: [2]f32,
+    size: [2]f32,
+    view_size: [2]f32,
+    camera: [2]f32,
+    tint: [4]f32,
+}
+#assert(size_of(Uniforms) == 48)
+#assert(offset_of(Uniforms, position) == 0)
+#assert(offset_of(Uniforms, size) == 8)
+#assert(offset_of(Uniforms, view_size) == 16)
+#assert(offset_of(Uniforms, camera) == 24)
+#assert(offset_of(Uniforms, tint) == 32)
+
+Renderer :: struct {
+    pipeline: wgpu.RenderPipeline,
+    vertex_buffer: wgpu.Buffer,
+    index_buffer: wgpu.Buffer,
+    uniform_buffer: wgpu.Buffer,
+    bind_group: wgpu.BindGroup,
+}
+
+renderer_init :: proc(renderer: ^Renderer, gpu: ^GPU) -&gt; bool {
+    renderer.vertex_buffer = wgpu.DeviceCreateBuffer(gpu.device, &amp;wgpu.BufferDescriptor{
+        label = &quot;character vertices&quot;, size = size_of(VERTICES), usage = {.Vertex, .CopyDst},
+    })
+    if renderer.vertex_buffer == nil { return false }
+    vertices := VERTICES
+    wgpu.QueueWriteBuffer(gpu.queue, renderer.vertex_buffer, 0, &amp;vertices, size_of(vertices))
+    renderer.index_buffer = wgpu.DeviceCreateBuffer(gpu.device, &amp;wgpu.BufferDescriptor{
+        label = &quot;quad indices&quot;, size = size_of(INDICES), usage = {.Index, .CopyDst},
+    })
+    if renderer.index_buffer == nil { return false }
+    indices := INDICES
+    wgpu.QueueWriteBuffer(gpu.queue, renderer.index_buffer, 0, &amp;indices, size_of(indices))
+    source := wgpu.ShaderSourceWGSL{
+        chain = {sType = .ShaderSourceWGSL}, code = #load(&quot;../shaders/character.wgsl&quot;, string),
+    }
+    shader := wgpu.DeviceCreateShaderModule(gpu.device, &amp;wgpu.ShaderModuleDescriptor{
+        label = &quot;character WGSL&quot;, nextInChain = &amp;source.chain,
+    })
+    if shader == nil { return false }
+    defer wgpu.ShaderModuleRelease(shader)
+    if gpu_failed() { return false }
+    renderer.uniform_buffer = wgpu.DeviceCreateBuffer(gpu.device, &amp;wgpu.BufferDescriptor{
+        label = &quot;character uniforms&quot;, size = size_of(Uniforms), usage = {.Uniform, .CopyDst},
+    })
+    if renderer.uniform_buffer == nil { return false }
+    binding_layout := wgpu.BindGroupLayoutEntry{
+        binding = 0, visibility = {.Vertex},
+        buffer = {type = .Uniform, minBindingSize = size_of(Uniforms)},
+    }
+    group_layout := wgpu.DeviceCreateBindGroupLayout(gpu.device, &amp;wgpu.BindGroupLayoutDescriptor{
+        label = &quot;character resource interface&quot;, entryCount = 1, entries = &amp;binding_layout,
+    })
+    if group_layout == nil { return false }
+    defer wgpu.BindGroupLayoutRelease(group_layout)
+    entry := wgpu.BindGroupEntry{binding = 0, buffer = renderer.uniform_buffer, offset = 0, size = size_of(Uniforms)}
+    renderer.bind_group = wgpu.DeviceCreateBindGroup(gpu.device, &amp;wgpu.BindGroupDescriptor{
+        label = &quot;character resources&quot;, layout = group_layout, entryCount = 1, entries = &amp;entry,
+    })
+    if renderer.bind_group == nil { return false }
+    layout := wgpu.DeviceCreatePipelineLayout(gpu.device, &amp;wgpu.PipelineLayoutDescriptor{
+        label = &quot;character pipeline interface&quot;, bindGroupLayoutCount = 1, bindGroupLayouts = &amp;group_layout,
+    })
+    if layout == nil { return false }
+    defer wgpu.PipelineLayoutRelease(layout)
+    target := wgpu.ColorTargetState{format = gpu.config.format, writeMask = {.Red, .Green, .Blue, .Alpha}}
+    fragment := wgpu.FragmentState{module = shader, entryPoint = &quot;fs_main&quot;, targetCount = 1, targets = &amp;target}
+    attributes := [2]wgpu.VertexAttribute{
+        {format = .Float32x2, offset = u64(offset_of(Vertex, position)), shaderLocation = 0},
+        {format = .Float32x4, offset = u64(offset_of(Vertex, color)), shaderLocation = 1},
+    }
+    vertex_layout := wgpu.VertexBufferLayout{
+        arrayStride = size_of(Vertex), stepMode = .Vertex,
+        attributeCount = len(attributes), attributes = raw_data(attributes[:]),
+    }
+    descriptor := wgpu.RenderPipelineDescriptor{
+        label = &quot;character pipeline&quot;, layout = layout,
+        vertex = {module = shader, entryPoint = &quot;vs_main&quot;, bufferCount = 1, buffers = &amp;vertex_layout},
+        fragment = &amp;fragment,
+        primitive = {topology = .TriangleList, frontFace = .CCW, cullMode = .None},
+        multisample = {count = 1, mask = 0xffffffff},
+    }
+    renderer.pipeline = wgpu.DeviceCreateRenderPipeline(gpu.device, &amp;descriptor)
+    return renderer.pipeline != nil &amp;&amp; !gpu_failed()
+}
+
+renderer_destroy :: proc(renderer: ^Renderer) {
+    if renderer.bind_group != nil { wgpu.BindGroupRelease(renderer.bind_group) }
+    if renderer.uniform_buffer != nil { wgpu.BufferRelease(renderer.uniform_buffer) }
+    if renderer.index_buffer != nil { wgpu.BufferRelease(renderer.index_buffer) }
+    if renderer.vertex_buffer != nil { wgpu.BufferRelease(renderer.vertex_buffer) }
+    if renderer.pipeline != nil { wgpu.RenderPipelineRelease(renderer.pipeline) }
+    renderer^ = {}
+}
+</code></pre></figure></details><details class="source-file"><summary>shaders/character.wgsl <span>29 lines</span></summary><p><a download href="../checkpoints/12/shaders/character.wgsl">Download this checkpoint’s shaders/character.wgsl</a></p><figure class="code-block"><figcaption>checkpoints/12/shaders/character.wgsl · complete file</figcaption><pre><code class="language-wgsl" data-source="checkpoints/12/shaders/character.wgsl">struct Uniforms {
+    position: vec2f,
+    size: vec2f,
+    view_size: vec2f,
+    camera: vec2f,
+    tint: vec4f,
+}
+@group(0) @binding(0) var&lt;uniform&gt; uniforms: Uniforms;
+
+struct Vertex_Out {
+    @builtin(position) clip_position: vec4f,
+    @location(0) color: vec4f,
+}
+
+@vertex
+fn vs_main(@location(0) position: vec2f, @location(1) color: vec4f) -&gt; Vertex_Out {
+    var out: Vertex_Out;
+    let pixel = uniforms.position + position * uniforms.size - uniforms.camera;
+    let ndc = vec2f(2.0 * pixel.x / uniforms.view_size.x - 1.0,
+                   1.0 - 2.0 * pixel.y / uniforms.view_size.y);
+    out.clip_position = vec4f(ndc, 0.0, 1.0);
+    out.color = color * uniforms.tint;
+    return out;
+}
+
+@fragment
+fn fs_main(in: Vertex_Out) -&gt; @location(0) vec4f {
+    return in.color;
+}
+</code></pre></figure></details></section><nav class="chapter-navigation" aria-label="Chapter navigation"><a href="../chapters/11-coordinates-for-humans.html"><span>← Previous Chapter</span><small>Coordinates measured in pixels</small></a><a href="../contents.html">Contents</a><a href="../chapters/13-resize-without-stretching.html"><span>Next Chapter →</span><small>Resize without stretching</small></a></nav></article></main><footer class="page-footer"><span>Native Pixels · September 2026 edition</span><a href="../appendix/sources.html">Sources &amp; verification</a><a href="../LICENSE">MIT License</a><a href="#top">Back to top ↑</a></footer></div></body></html>

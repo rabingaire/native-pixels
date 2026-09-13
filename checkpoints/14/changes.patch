@@ -1,0 +1,88 @@
+--- before/src/main.odin
++++ after/src/main.odin
+@@ -1,5 +1,6 @@
+ package character
+ import "core:fmt"
++import "core:c"
+ import sdl "vendor:sdl3"
+ import wgpu "vendor:wgpu"
+ 
+@@ -31,6 +32,7 @@
+     defer renderer_destroy(&renderer)
+     if !renderer_init(&renderer, &gpu) { return }
+ 
++    game := Game{position = {120, 100}, size = {48, 64}, tint = {1, 1, 1, 1}}
+     running := true
+     for running {
+         event: sdl.Event
+@@ -43,6 +45,15 @@
+         if !running { break }
+         wgpu.InstanceProcessEvents(gpu.instance)
+         if gpu_failed() { break }
+-        if !renderer_frame(&gpu, window, &renderer) { break }
++        width, height: c.int
++        if !sdl.GetWindowSize(window, &width, &height) { break }
++        if width <= 0 || height <= 0 || .MINIMIZED in sdl.GetWindowFlags(window) {
++            sdl.Delay(10)
++            continue
++        }
++        view_size := [2]f32{f32(width), f32(height)}
++        direction := read_movement(window)
++        game_update(&game, direction)
++        if !renderer_frame(&gpu, window, &renderer, game.position, game.size, game.tint, view_size) { break }
+     }
+ }
+--- before/src/renderer.odin
++++ after/src/renderer.odin
+@@ -1,18 +1,15 @@
+ package character
+ import "core:fmt"
+-import "core:c"
+ import sdl "vendor:sdl3"
+ import wgpu "vendor:wgpu"
+ 
+-renderer_frame :: proc(gpu: ^GPU, window: ^sdl.Window, renderer: ^Renderer) -> bool {
++renderer_frame :: proc(gpu: ^GPU, window: ^sdl.Window, renderer: ^Renderer,
++                       position, size: [2]f32, tint: [4]f32, view_size: [2]f32) -> bool {
+     if !gpu_refresh_surface(gpu, window) { sdl.Delay(10); return !gpu_failed() }
+-    width, height: c.int
+-    if !sdl.GetWindowSize(window, &width, &height) { return false }
+-    if width <= 0 || height <= 0 { sdl.Delay(10); return true }
+     uniforms := Uniforms{
+-        position = {120, 100}, size = {48, 64},
+-        view_size = {f32(width), f32(height)},
+-        camera = {0, 0}, tint = {1, 1, 1, 1},
++        position = position, size = size,
++        view_size = view_size,
++        camera = {0, 0}, tint = tint,
+     }
+     wgpu.QueueWriteBuffer(gpu.queue, renderer.uniform_buffer, 0, &uniforms, size_of(uniforms))
+     frame := wgpu.SurfaceGetCurrentTexture(gpu.platform.surface)
+--- before/src/game.odin
++++ after/src/game.odin
+@@ -0,0 +1,25 @@
++package character
++import sdl "vendor:sdl3"
++
++Game :: struct {
++    position: [2]f32,
++    size: [2]f32,
++    tint: [4]f32,
++}
++
++read_movement :: proc(window: ^sdl.Window) -> [2]f32 {
++    if !(.INPUT_FOCUS in sdl.GetWindowFlags(window)) { return {} }
++    keys := sdl.GetKeyboardState(nil)
++    direction: [2]f32
++    if keys[sdl.Scancode.D] || keys[sdl.Scancode.RIGHT] { direction.x += 1 }
++    if keys[sdl.Scancode.A] || keys[sdl.Scancode.LEFT]  { direction.x -= 1 }
++    if keys[sdl.Scancode.S] || keys[sdl.Scancode.DOWN]  { direction.y += 1 }
++    if keys[sdl.Scancode.W] || keys[sdl.Scancode.UP]    { direction.y -= 1 }
++    return direction
++}
++
++game_update :: proc(game: ^Game, direction: [2]f32) {
++    // Temporary input proof: color changes while any movement key is held.
++    game.tint = {1, 1, 1, 1}
++    if direction.x != 0 || direction.y != 0 { game.tint = {1, 0.35, 0.35, 1} }
++}

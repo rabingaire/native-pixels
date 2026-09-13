@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="description" content="Select a compatible implementation, open a logical connection, and obtain its ordered stream of work."><meta name="author" content="Rabin Gaire"><title>Adapter, device, and queue — Native Pixels</title><link rel="canonical" href="https://rabingaire.com.np/native-pixels/chapters/05-adapter-device-queue.html"><link rel="sitemap" type="application/xml" href="../sitemap.xml"><meta property="og:type" content="article"><meta property="og:site_name" content="Native Pixels"><meta property="og:locale" content="en_US"><meta property="og:title" content="Adapter, device, and queue — Native Pixels"><meta property="og:description" content="Select a compatible implementation, open a logical connection, and obtain its ordered stream of work."><meta property="og:url" content="https://rabingaire.com.np/native-pixels/chapters/05-adapter-device-queue.html"><meta property="og:image" content="https://rabingaire.com.np/native-pixels/assets/room-gameplay.png"><meta property="og:image:alt" content="Pixel-art room rendered with native WebGPU, Odin, and SDL3"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Adapter, device, and queue — Native Pixels"><meta name="twitter:description" content="Select a compatible implementation, open a logical connection, and obtain its ordered stream of work."><meta name="twitter:image" content="https://rabingaire.com.np/native-pixels/assets/room-gameplay.png"><script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Book","@id":"https://rabingaire.com.np/native-pixels/#book","name":"Native Pixels","url":"https://rabingaire.com.np/native-pixels/","description":"Learn native 2D WebGPU with Odin and SDL3 in 23 chapters. Build a pixel-art game with sprite animation, collision, and complete runnable source.","inLanguage":"en","isAccessibleForFree":true,"author":{"@type":"Person","name":"Rabin Gaire"},"license":"https://rabingaire.com.np/native-pixels/LICENSE","image":"https://rabingaire.com.np/native-pixels/assets/room-gameplay.png"},{"@type":"Chapter","@id":"https://rabingaire.com.np/native-pixels/chapters/05-adapter-device-queue.html","url":"https://rabingaire.com.np/native-pixels/chapters/05-adapter-device-queue.html","name":"Adapter, device, and queue","description":"Select a compatible implementation, open a logical connection, and obtain its ordered stream of work.","inLanguage":"en","isPartOf":{"@id":"https://rabingaire.com.np/native-pixels/#book"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Native Pixels","item":"https://rabingaire.com.np/native-pixels/"},{"@type":"ListItem","position":2,"name":"Adapter, device, and queue","item":"https://rabingaire.com.np/native-pixels/chapters/05-adapter-device-queue.html"}]}]}</script><script>try{const theme=localStorage.getItem("native-pixels-theme");if(theme==="light"||theme==="dark")document.documentElement.dataset.theme=theme;}catch{}</script><link rel="stylesheet" href="../assets/style.css"><script defer src="../assets/book.js"></script></head>
+<body id="top" class="reading-page"><a class="skip-link" href="#main">Skip to content</a><div class="reading-progress" aria-hidden="true"></div><aside class="book-rail"><a class="wordmark" href="../index.html"><span class="brand-mark" aria-hidden="true">▰</span><span>Native Pixels<span class="edition">ODIN / SDL3 / WEBGPU</span></span></a><nav class="rail-primary" aria-label="Book navigation"><a class="rail-link" href="../index.html"><span class="rail-label">Overview</span></a><a class="rail-link" href="../contents.html"><span class="rail-label">All chapters</span></a><a class="rail-link" href="../appendix/build.html"><span class="rail-label">Build the game</span></a></nav><div class="rail-context"><p class="rail-kicker">Chapter 5</p><a class="rail-title" href="#top">Adapter, device, and queue</a><nav class="rail-sections" aria-label="Chapter sections"><a class="rail-link numbered" href="#section-1"><span class="rail-index">5.1</span><span class="rail-label">Choose capability before creating resources</span></a><a class="rail-link numbered" href="#section-2"><span class="rail-index">5.2</span><span class="rail-label">Three names for three different decisions</span></a><a class="rail-link numbered" href="#section-3"><span class="rail-index">5.3</span><span class="rail-label">A request has a result callback</span></a><a class="rail-link numbered" href="#section-4"><span class="rail-index">5.4</span><span class="rail-label">Odin meets the callback ABI</span></a><a class="rail-link numbered" href="#section-5"><span class="rail-index">5.5</span><span class="rail-label">We own references, not raw hardware</span></a><a class="rail-link numbered" href="#section-6"><span class="rail-index">5.6</span><span class="rail-label">When this work happens</span></a><a class="rail-link numbered" href="#section-7"><span class="rail-index">5.7</span><span class="rail-label">Read the symptom, test a hypothesis</span></a><a class="rail-link numbered" href="#section-8"><span class="rail-index">5.8</span><span class="rail-label">Experiments</span></a><a class="rail-link numbered" href="#section-9"><span class="rail-index">5.9</span><span class="rail-label">What we have now</span></a><a class="rail-link numbered" href="#section-10"><span class="rail-index">5.10</span><span class="rail-label">Challenges</span></a><a class="rail-link numbered" href="#section-11"><span class="rail-index">5.11</span><span class="rail-label">Exact code changes and runnable checkpoint</span></a></nav><div class="rail-prev-next"><a href="../chapters/04-instance-and-surface.html">← Previous</a><a href="../chapters/06-negotiate-the-images.html">Next →</a></div></div><div class="rail-reference"><p class="rail-kicker">Keep nearby</p><nav aria-label="Reference pages"><a class="rail-link" href="../appendix/final-source.html"><span class="rail-label">Complete final source</span></a><a class="rail-link" href="../appendix/glossary.html"><span class="rail-label">Glossary</span></a><a class="rail-link" href="../appendix/cheat-sheets.html"><span class="rail-label">Initialization, frame, and lifetime sheets</span></a><a class="rail-link" href="../appendix/sources.html"><span class="rail-label">Sources and verification record</span></a></nav></div></aside><div class="page-shell"><header class="topbar"><div class="breadcrumb"><a href="../index.html">Native Pixels</a><span aria-hidden="true">/</span><span>Chapter 5</span></div><div class="reader-controls"><button type="button" class="theme-toggle" hidden aria-label="Change color theme">Theme</button><button type="button" class="focus-toggle" hidden aria-pressed="false">Focus</button><a class="mobile-contents" href="../contents.html">Contents</a></div></header><main id="main" tabindex="-1"><article class="chapter"><header class="chapter-header"><span class="chapter-display-number" aria-hidden="true">5</span><p class="eyebrow">II · Put pixels on the window <span>Chapter 05 / 23</span></p><h1>Adapter, device, and queue</h1><p class="deck">Select a compatible implementation, open a logical connection, and obtain its ordered stream of work.</p><p class="reading-meta">7 min read + implementation · checkpoint 05</p></header><aside class="callout outcome"><strong>At the end of this chapter</strong><p>The window opens with a compatible adapter, device, queue, and diagnostic callbacks installed.</p></aside><nav class="on-this-page" aria-label="On this page"><details><summary>In this chapter</summary><ol><li><a href="#section-1"><span>5.1</span> Choose capability before creating resources</a></li><li><a href="#section-2"><span>5.2</span> Three names for three different decisions</a></li><li><a href="#section-3"><span>5.3</span> A request has a result callback</a></li><li><a href="#section-4"><span>5.4</span> Odin meets the callback ABI</a></li><li><a href="#section-5"><span>5.5</span> We own references, not raw hardware</a></li><li><a href="#section-6"><span>5.6</span> When this work happens</a></li><li><a href="#section-7"><span>5.7</span> Read the symptom, test a hypothesis</a></li><li><a href="#section-8"><span>5.8</span> Experiments</a></li><li><a href="#section-9"><span>5.9</span> What we have now</a></li><li><a href="#section-10"><span>5.10</span> Challenges</a></li><li><a href="#section-11"><span>5.11</span> Exact code changes and runnable checkpoint</a></li></ol></details></nav><section class="learning-guide"><h2 id="section-1"><span class="section-number" aria-hidden="true">5.1</span>Choose capability before creating resources<a class="heading-link" href="#section-1" aria-label="Link to Choose capability before creating resources">#</a></h2><p>An adapter represents a candidate GPU and its capabilities. A device is the logical connection created from that candidate; buffers and pipelines belong to that device. The queue accepts ordered uploads and command submissions for it. A laptop with several GPUs makes the distinction obvious, but all three roles still exist on a machine with only one GPU.</p><p>A callback is a procedure the library calls to deliver a result. Passing a result pointer through user data lets it write into state our requesting code can inspect. That state must remain valid until completion, not merely until the request function returns. The pinned implementation completes these requests inline; the chapter isolates that assumption so another implementation cannot silently borrow a dead local variable.</p><p>A capability is available functionality; a limit is a numeric bound, such as the largest supported texture dimension. Ask for what this game needs. Requesting every optional feature can reject otherwise suitable hardware without making a single rectangle look better.</p></section><section><h2 id="section-2"><span class="section-number" aria-hidden="true">5.2</span>Three names for three different decisions<a class="heading-link" href="#section-2" aria-label="Link to Three names for three different decisions">#</a></h2><p>An adapter represents a candidate graphics implementation with particular capabilities. It often corresponds to a physical GPU, but may instead be a software implementation. A laptop can offer more than one adapter. A surface-compatible adapter must be able to present to our chosen window, so we create the surface first and include it in the adapter request.</p><p>A device is a logical connection created from an adapter. It owns our buffers, pipelines, and command encoders. The adapter describes what is available; the device establishes what this application is allowed to use. Requesting features and limits is a contract, not a way to manufacture hardware support. Our rectangle needs only baseline functionality, so the device descriptor leaves required features empty and required limits absent.</p><p>The queue belongs to the device and accepts ordered work and data writes. It is a CPU-visible handle to an execution abstraction over the GPU backend. We obtain it once with <code>DeviceGetQueue</code> and hold our returned reference until shutdown. Do not create a queue every frame; the ordered stream is exactly what lets this frame’s buffer write precede this frame’s draw.</p></section><section><h2 id="section-3"><span class="section-number" aria-hidden="true">5.3</span>A request has a result callback<a class="heading-link" href="#section-3" aria-label="Link to A request has a result callback">#</a></h2><p>Add the adapter, device, queue, and completion fields to <code>GPU</code>. Add the request and diagnostic procedures to <code>gpu.odin</code>. Replace the last <code>return true</code> in <code>gpu_init</code> with <code>return gpu_request_device(gpu)</code>. This helper is not mysterious setup: its entire implementation is below, and we will account for every descriptor.</p><figure class="code-block"><figcaption>src/gpu.odin · gpu_request_device ::</figcaption><pre><code class="language-odin">gpu_request_device :: proc(gpu: ^GPU) -&gt; bool {
+    options := wgpu.RequestAdapterOptions{
+        compatibleSurface = gpu.platform.surface,
+        powerPreference = .HighPerformance,
+        featureLevel = .Core,
+    }
+    _ = wgpu.InstanceRequestAdapter(gpu.instance, &amp;options, {
+        mode = .AllowSpontaneos, callback = adapter_ready, userdata1 = gpu,
+    })
+    // Verified wgpu-native 29.0.1.1 behavior: these two request callbacks run inline.
+    // Do not carry this assumption to Dawn or to a later native implementation.
+    assert(gpu.adapter_done, &quot;Pinned wgpu-native request contract changed&quot;)
+    if gpu.adapter == nil { return false }
+    descriptor := wgpu.DeviceDescriptor{
+        label = &quot;2D device&quot;, defaultQueue = {label = &quot;2D queue&quot;},
+        deviceLostCallbackInfo = {mode = .AllowSpontaneos, callback = device_lost},
+        uncapturedErrorCallbackInfo = {callback = uncaptured_error},
+    }
+    _ = wgpu.AdapterRequestDevice(gpu.adapter, &amp;descriptor, {
+        mode = .AllowSpontaneos, callback = device_ready, userdata1 = gpu,
+    })
+    assert(gpu.device_done, &quot;Pinned wgpu-native request contract changed&quot;)
+    if gpu.device == nil { return false }
+    gpu.queue = wgpu.DeviceGetQueue(gpu.device)
+    return gpu.queue != nil &amp;&amp; !gpu_failed()
+}</code></pre></figure><div class="table-scroll"><table><thead><tr><th scope="col">Descriptor field</th><th scope="col">What we are asking for</th></tr></thead><tbody><tr><td><code>compatibleSurface</code></td><td>An adapter whose backend can present to this surface</td></tr><tr><td><code>powerPreference</code></td><td>A preference for performance; not a guarantee of a discrete GPU</td></tr><tr><td><code>featureLevel = .Core</code></td><td>The core WebGPU feature level</td></tr><tr><td><code>defaultQueue.label</code></td><td>A diagnostic name for the device’s queue</td></tr><tr><td>Required features / limits omitted</td><td>The native implementation’s baseline device contract</td></tr><tr><td>Callback info</td><td>Function pointer, delivery policy, and caller-owned result storage</td></tr></tbody></table></div><p>A future is a token representing an operation that can complete asynchronously. In a general native implementation, the function returning does not prove that the callback has run. Callback modes distinguish delivery through waiting, event processing, or spontaneous invocation. Browser WebGPU presents related requests as promises rather than these native callback-info structs.</p><aside class="callout warning"><strong>The exact native implementation matters</strong><p>The pinned <a href="https://github.com/gfx-rs/wgpu-native/blob/v29.0.1.1/src/lib.rs">wgpu-native source</a> invokes both request callbacks inside their request functions and returns a null future. It does not implement these requests as delayed work. This edition deliberately uses that verified behavior and asserts that each callback completed. <code>.AllowSpontaneos</code> is the Odin binding’s exact spelling. Do not copy this synchronous result pattern to Dawn, a browser, or an unverified wgpu-native upgrade.</p></aside><p>For an implementation with deferred completion, keep result storage alive until the callback completes, pump the documented event/wait mechanism, and coordinate cross-thread delivery with atomics or a mutex. Returning a pointer to a temporary local “result” and then waiting elsewhere is a dangling-pointer bug. Our <code>GPU</code> lives in <code>main</code>, and the version-specific inline calls complete before we inspect its result fields.</p></section><section><h2 id="section-4"><span class="section-number" aria-hidden="true">5.4</span>Odin meets the callback ABI<a class="heading-link" href="#section-4" aria-label="Link to Odin meets the callback ABI">#</a></h2><figure class="code-block"><figcaption>src/gpu.odin · adapter_ready ::</figcaption><pre><code class="language-odin">adapter_ready :: proc &quot;c&quot; (status: wgpu.RequestAdapterStatus, adapter: wgpu.Adapter,
+                          message: wgpu.StringView, userdata1, userdata2: rawptr) {
+    context = runtime.default_context()
+    gpu := cast(^GPU)userdata1
+    gpu.adapter_done = true
+    if status == .Success { gpu.adapter = adapter }
+    else { fmt.eprintln(&quot;Adapter request:&quot;, status, message) }
+}</code></pre></figure><p><code>proc "c"</code> matches the native calling convention. Native code does not provide Odin’s implicit context, so the callback establishes <code>runtime.default_context()</code> before using formatting facilities. The <code>userdata1</code> pointer is the exact <code>gpu</code> pointer we supplied; it gives the callback somewhere to store the owned returned handle. The callback’s message is borrowed text. We print it during the callback instead of retaining a pointer to memory the implementation may immediately free.</p><p>The device callback is structurally similar, except that it receives a device handle and stores <code>device_done</code>. A failed adapter request can mean missing drivers, no compatible backend, or a surface that the available adapter cannot present to. A failed device request can mean unsupported requirements or a failure to establish the backend device. Both log the native status and message before initialization returns false.</p><figure class="code-block"><figcaption>src/gpu.odin · uncaptured_error ::</figcaption><pre><code class="language-odin">uncaptured_error :: proc &quot;c&quot; (device: ^wgpu.Device, error_type: wgpu.ErrorType,
+                             message: wgpu.StringView, userdata1, userdata2: rawptr) {
+    context = runtime.default_context()
+    fmt.eprintln(&quot;WebGPU error:&quot;, error_type, message)
+    intrinsics.atomic_store(&amp;gpu_fault, true)
+}</code></pre></figure><p>Install uncaptured-error and device-loss callbacks in the device descriptor before any resources are created. Validation errors are often reported through a callback, not merely as a null handle. Our callbacks report the message and atomically set a process-lifetime <code>gpu_fault</code> flag. Diagnostic delivery may occur on another thread; unlike the pinned inline request-result fields, this flag cannot safely use ordinary unsynchronized access. Process-lifetime storage also avoids a callback holding a pointer into a destroyed renderer.</p><p>At the top of each iteration after SDL event processing, call <code>InstanceProcessEvents</code>, then check <code>gpu_failed()</code>. This services native completion work; it is not a command submission and does not wait for every GPU operation. On device loss we stop, release our objects, and let the user restart. Rebuilding every device-dependent resource is outside this small project’s scope, but detecting and explaining loss is not optional.</p></section><section><h2 id="section-5"><span class="section-number" aria-hidden="true">5.5</span>We own references, not raw hardware<a class="heading-link" href="#section-5" aria-label="Link to We own references, not raw hardware">#</a></h2><p>Add release calls for queue, device, and adapter to <code>gpu_destroy</code>. It first calls the native extension <code>DevicePoll(device, true, nil)</code> to drain outstanding work at shutdown. There is no such blocking call in the normal frame loop. Release decrements the application’s reference; it does not necessarily destroy an underlying allocation at that instant. Related objects and in-flight work can retain what they need.</p></section><section><h2 id="section-6"><span class="section-number" aria-hidden="true">5.6</span>When this work happens<a class="heading-link" href="#section-6" aria-label="Link to When this work happens">#</a></h2><div class="table-scroll"><table><thead><tr><th scope="col">Operation</th><th scope="col">Frequency</th><th scope="col">Reason</th></tr></thead><tbody><tr><td>Request adapter and device</td><td>Once</td><td>Select and establish the application’s GPU connection</td></tr><tr><td>Get queue</td><td>Once per device</td><td>Hold the ordered submission stream</td></tr><tr><td>Process native events</td><td>Each iteration</td><td>Service callbacks without a per-frame full GPU wait</td></tr><tr><td>Blocking DevicePoll</td><td>Shutdown only</td><td>Drain work during orderly teardown</td></tr></tbody></table></div></section><section><h2 id="section-7"><span class="section-number" aria-hidden="true">5.7</span>Read the symptom, test a hypothesis<a class="heading-link" href="#section-7" aria-label="Link to Read the symptom, test a hypothesis">#</a></h2><div class="table-scroll"><table><thead><tr><th scope="col">Symptom</th><th scope="col">What to inspect</th><th scope="col">Why it matters</th></tr></thead><tbody><tr><td>Crash inside a logging callback</td><td>Calling convention and Odin context</td><td>A native caller does not supply Odin context</td></tr><tr><td>Device handle exists but resource creation fails</td><td>The uncaptured-error message</td><td>A non-null handle is not a complete validation check</td></tr><tr><td>Request result appears empty in another implementation</td><td>Whether completion was actually delivered</td><td>The inline behavior is pinned implementation behavior, not a portable promise</td></tr></tbody></table></div></section><section><h2 id="section-8"><span class="section-number" aria-hidden="true">5.8</span>Experiments<a class="heading-link" href="#section-8" aria-label="Link to Experiments">#</a></h2><p>These short, optional checks help you test the explanation. Predict the result first, then run the program. Restore the chapter’s baseline before continuing; later chapters assume the supplied checkpoint.</p><ol><li>Change the adapter power preference to <code>.LowPower</code>. The program may choose the same adapter; explain why a preference need not change the result.</li><li>Follow the code path when the adapter callback reports failure. Which objects still require release?</li></ol></section><section><h2 id="section-9"><span class="section-number" aria-hidden="true">5.9</span>What we have now<a class="heading-link" href="#section-9" aria-label="Link to What we have now">#</a></h2><p>The window opens with a compatible adapter, device, queue, and diagnostic callbacks installed.</p><p>Before moving on, run this checkpoint and compare it with the stated result. If it differs, use the symptom table above or the complete files below to locate the missing step.</p><p>Run <code>odin run checkpoints/05/src</code> from the book root, with the SDL linker flags for your platform. <a href="../appendix/build.html">Dependency and build instructions →</a></p></section><section class="challenges"><h2 id="section-10"><span class="section-number" aria-hidden="true">5.10</span>Challenges<a class="heading-link" href="#section-10" aria-label="Link to Challenges">#</a></h2><p class="challenge-intro">Optional extensions. The complete game in chapter 23 requires none of these. Work in a separate copy if you want to explore; the next chapter starts from this chapter’s supplied baseline.</p><ol><li><h3>A readable GPU report</h3><p>Print a small startup report with the adapter information and selected device limits available through the pinned binding. Release any native strings or result members using their matching API.</p><p class="challenge-check"><strong>Check your result:</strong> The report appears once and helps identify which GPU is used on a multi-GPU machine.</p></li><li><h3>An explicit requirement</h3><p>Choose a hypothetical maximum sprite-image dimension and compare it with the device limit before loading assets. Explain the requirement in the error message.</p><p class="challenge-check"><strong>Check your result:</strong> A deliberately excessive requirement is rejected clearly without attempting an invalid allocation.</p></li></ol></section><section><h2 id="section-11"><span class="section-number" aria-hidden="true">5.11</span>Exact code changes and runnable checkpoint<a class="heading-link" href="#section-11" aria-label="Link to Exact code changes and runnable checkpoint">#</a></h2><div class="table-scroll"><table><thead><tr><th scope="col">File</th><th scope="col">Operation</th></tr></thead><tbody><tr><td><code>src/main.odin</code></td><td>Replace the changed portions shown below; preserve all other code</td></tr><tr><td><code>src/gpu.odin</code></td><td>Replace the changed portions shown below; preserve all other code</td></tr></tbody></table></div><details class="change-record"><summary>Exact patch from the preceding checkpoint</summary><p><a download href="../checkpoints/05/changes.patch">Download changes.patch</a> · inspect or apply with <code>patch -p1</code> from your own project directory at the previous checkpoint.</p><figure class="code-block"><pre><code class="language-diff">--- before/src/main.odin
++++ after/src/main.odin
+@@ -1,6 +1,7 @@
+ package character
+ import &quot;core:fmt&quot;
+ import sdl &quot;vendor:sdl3&quot;
++import wgpu &quot;vendor:wgpu&quot;
+ 
+ main :: proc() {
+     if !sdl.Init({.VIDEO}) {
+@@ -35,6 +36,8 @@
+             }
+         }
+         if !running { break }
++        wgpu.InstanceProcessEvents(gpu.instance)
++        if gpu_failed() { break }
+         sdl.Delay(10)
+     }
+ }
+--- before/src/gpu.odin
++++ after/src/gpu.odin
+@@ -1,11 +1,17 @@
+ package character
+ import &quot;core:fmt&quot;
++import &quot;base:runtime&quot;
++import &quot;base:intrinsics&quot;
+ import sdl &quot;vendor:sdl3&quot;
+ import wgpu &quot;vendor:wgpu&quot;
+ 
+ GPU :: struct {
+     instance: wgpu.Instance,
+     platform: Platform_Surface,
++    adapter: wgpu.Adapter,
++    device: wgpu.Device,
++    queue: wgpu.Queue,
++    adapter_done, device_done: bool,
+ }
+ 
+ gpu_init :: proc(gpu: ^GPU, window: ^sdl.Window) -&gt; bool {
+@@ -19,11 +25,80 @@
+         fmt.eprintln(&quot;Cannot connect WebGPU to the SDL window&quot;)
+         return false
+     }
+-    return true
++    return gpu_request_device(gpu)
+ }
+ 
+ gpu_destroy :: proc(gpu: ^GPU) {
++    if gpu.device != nil { _ = wgpu.DevicePoll(gpu.device, true, nil) }
++    if gpu.queue != nil { wgpu.QueueRelease(gpu.queue) }
++    if gpu.device != nil { wgpu.DeviceRelease(gpu.device) }
++    if gpu.adapter != nil { wgpu.AdapterRelease(gpu.adapter) }
+     platform_surface_destroy(&amp;gpu.platform)
+     if gpu.instance != nil { wgpu.InstanceRelease(gpu.instance) }
+     gpu^ = {}
+ }
++
++// Process-lifetime storage: native diagnostic callbacks may arrive on other threads.
++gpu_fault: bool
++
++gpu_failed :: proc() -&gt; bool { return intrinsics.atomic_load(&amp;gpu_fault) }
++
++adapter_ready :: proc &quot;c&quot; (status: wgpu.RequestAdapterStatus, adapter: wgpu.Adapter,
++                          message: wgpu.StringView, userdata1, userdata2: rawptr) {
++    context = runtime.default_context()
++    gpu := cast(^GPU)userdata1
++    gpu.adapter_done = true
++    if status == .Success { gpu.adapter = adapter }
++    else { fmt.eprintln(&quot;Adapter request:&quot;, status, message) }
++}
++
++device_ready :: proc &quot;c&quot; (status: wgpu.RequestDeviceStatus, device: wgpu.Device,
++                         message: wgpu.StringView, userdata1, userdata2: rawptr) {
++    context = runtime.default_context()
++    gpu := cast(^GPU)userdata1
++    gpu.device_done = true
++    if status == .Success { gpu.device = device }
++    else { fmt.eprintln(&quot;Device request:&quot;, status, message) }
++}
++
++device_lost :: proc &quot;c&quot; (device: ^wgpu.Device, reason: wgpu.DeviceLostReason,
++                        message: wgpu.StringView, userdata1, userdata2: rawptr) {
++    context = runtime.default_context()
++    if reason == .Destroyed { return }
++    fmt.eprintln(&quot;Device lost:&quot;, reason, message)
++    intrinsics.atomic_store(&amp;gpu_fault, true)
++}
++
++uncaptured_error :: proc &quot;c&quot; (device: ^wgpu.Device, error_type: wgpu.ErrorType,
++                             message: wgpu.StringView, userdata1, userdata2: rawptr) {
++    context = runtime.default_context()
++    fmt.eprintln(&quot;WebGPU error:&quot;, error_type, message)
++    intrinsics.atomic_store(&amp;gpu_fault, true)
++}
++
++gpu_request_device :: proc(gpu: ^GPU) -&gt; bool {
++    options := wgpu.RequestAdapterOptions{
++        compatibleSurface = gpu.platform.surface,
++        powerPreference = .HighPerformance,
++        featureLevel = .Core,
++    }
++    _ = wgpu.InstanceRequestAdapter(gpu.instance, &amp;options, {
++        mode = .AllowSpontaneos, callback = adapter_ready, userdata1 = gpu,
++    })
++    // Verified wgpu-native 29.0.1.1 behavior: these two request callbacks run inline.
++    // Do not carry this assumption to Dawn or to a later native implementation.
++    assert(gpu.adapter_done, &quot;Pinned wgpu-native request contract changed&quot;)
++    if gpu.adapter == nil { return false }
++    descriptor := wgpu.DeviceDescriptor{
++        label = &quot;2D device&quot;, defaultQueue = {label = &quot;2D queue&quot;},
++        deviceLostCallbackInfo = {mode = .AllowSpontaneos, callback = device_lost},
++        uncapturedErrorCallbackInfo = {callback = uncaptured_error},
++    }
++    _ = wgpu.AdapterRequestDevice(gpu.adapter, &amp;descriptor, {
++        mode = .AllowSpontaneos, callback = device_ready, userdata1 = gpu,
++    })
++    assert(gpu.device_done, &quot;Pinned wgpu-native request contract changed&quot;)
++    if gpu.device == nil { return false }
++    gpu.queue = wgpu.DeviceGetQueue(gpu.device)
++    return gpu.queue != nil &amp;&amp; !gpu_failed()
++}</code></pre></figure></details><p>Complete end-of-chapter files follow. These are already present in <code>checkpoints/05/</code>; no assembly from excerpts is required.</p><details class="source-file"><summary>src/main.odin <span>43 lines</span></summary><p><a download href="../checkpoints/05/src/main.odin">Download this checkpoint’s src/main.odin</a></p><figure class="code-block"><figcaption>checkpoints/05/src/main.odin · complete file</figcaption><pre><code class="language-odin" data-source="checkpoints/05/src/main.odin">package character
+import &quot;core:fmt&quot;
+import sdl &quot;vendor:sdl3&quot;
+import wgpu &quot;vendor:wgpu&quot;
+
+main :: proc() {
+    if !sdl.Init({.VIDEO}) {
+        fmt.eprintln(&quot;SDL initialization:&quot;, sdl.GetError())
+        return
+    }
+    defer sdl.Quit()
+    flags: sdl.WindowFlags = {}
+    when ODIN_OS == .Darwin { flags += {.METAL} }
+    window := sdl.CreateWindow(&quot;Native Pixels&quot;, 960, 640, flags)
+    if window == nil {
+        fmt.eprintln(&quot;Window creation:&quot;, sdl.GetError())
+        return
+    }
+    defer sdl.DestroyWindow(window)
+    if !sdl.ShowWindow(window) {
+        fmt.eprintln(&quot;Show window:&quot;, sdl.GetError())
+        return
+    }
+    if !sdl.RaiseWindow(window) { fmt.eprintln(&quot;Window focus request:&quot;, sdl.GetError()) }
+
+    gpu: GPU
+    defer gpu_destroy(&amp;gpu)
+    if !gpu_init(&amp;gpu, window) { return }
+
+    running := true
+    for running {
+        event: sdl.Event
+        for sdl.PollEvent(&amp;event) {
+            #partial switch event.type {
+            case .QUIT, .WINDOW_CLOSE_REQUESTED: running = false
+            }
+        }
+        if !running { break }
+        wgpu.InstanceProcessEvents(gpu.instance)
+        if gpu_failed() { break }
+        sdl.Delay(10)
+    }
+}
+</code></pre></figure></details><details class="source-file"><summary>src/platform.odin <span>73 lines</span></summary><p><a download href="../checkpoints/05/src/platform.odin">Download this checkpoint’s src/platform.odin</a></p><figure class="code-block"><figcaption>checkpoints/05/src/platform.odin · complete file</figcaption><pre><code class="language-odin" data-source="checkpoints/05/src/platform.odin">package character
+import &quot;core:fmt&quot;
+import sdl &quot;vendor:sdl3&quot;
+import wgpu &quot;vendor:wgpu&quot;
+
+// SDL owns the window. We own this extra Metal view, when one exists.
+Platform_Surface :: struct {
+    surface: wgpu.Surface,
+    metal_view: sdl.MetalView, // nil on Windows and Linux
+}
+
+platform_surface_create :: proc(instance: wgpu.Instance, window: ^sdl.Window) -&gt; Platform_Surface {
+    result: Platform_Surface
+    when ODIN_OS == .Darwin {
+        result.metal_view = sdl.Metal_CreateView(window)
+        if result.metal_view == nil {
+            fmt.eprintln(&quot;Metal view:&quot;, sdl.GetError())
+            return result
+        }
+        layer := sdl.Metal_GetLayer(result.metal_view)
+        if layer == nil { return result }
+        source := wgpu.SurfaceSourceMetalLayer{
+            chain = {sType = .SurfaceSourceMetalLayer}, layer = layer,
+        }
+        descriptor := wgpu.SurfaceDescriptor{nextInChain = &amp;source.chain, label = &quot;SDL Metal surface&quot;}
+        result.surface = wgpu.InstanceCreateSurface(instance, &amp;descriptor)
+    } else when ODIN_OS == .Windows {
+        properties := sdl.GetWindowProperties(window)
+        hwnd := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_WIN32_HWND_POINTER, nil)
+        instance_handle := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_WIN32_INSTANCE_POINTER, nil)
+        if hwnd == nil || instance_handle == nil { return result }
+        source := wgpu.SurfaceSourceWindowsHWND{
+            chain = {sType = .SurfaceSourceWindowsHWND}, hwnd = hwnd, hinstance = instance_handle,
+        }
+        descriptor := wgpu.SurfaceDescriptor{nextInChain = &amp;source.chain, label = &quot;SDL Win32 surface&quot;}
+        result.surface = wgpu.InstanceCreateSurface(instance, &amp;descriptor)
+    } else when ODIN_OS == .Linux {
+        properties := sdl.GetWindowProperties(window)
+        switch sdl.GetCurrentVideoDriver() {
+        case &quot;wayland&quot;:
+            display := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_WAYLAND_DISPLAY_POINTER, nil)
+            surface := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_WAYLAND_SURFACE_POINTER, nil)
+            if display == nil || surface == nil { return result }
+            source := wgpu.SurfaceSourceWaylandSurface{
+                chain = {sType = .SurfaceSourceWaylandSurface}, display = display, surface = surface,
+            }
+            descriptor := wgpu.SurfaceDescriptor{nextInChain = &amp;source.chain, label = &quot;SDL Wayland surface&quot;}
+            result.surface = wgpu.InstanceCreateSurface(instance, &amp;descriptor)
+        case &quot;x11&quot;:
+            display := sdl.GetPointerProperty(properties, sdl.PROP_WINDOW_X11_DISPLAY_POINTER, nil)
+            window_id := sdl.GetNumberProperty(properties, sdl.PROP_WINDOW_X11_WINDOW_NUMBER, 0)
+            if display == nil || window_id == 0 { return result }
+            source := wgpu.SurfaceSourceXlibWindow{
+                chain = {sType = .SurfaceSourceXlibWindow}, display = display, window = u64(window_id),
+            }
+            descriptor := wgpu.SurfaceDescriptor{nextInChain = &amp;source.chain, label = &quot;SDL X11 surface&quot;}
+            result.surface = wgpu.InstanceCreateSurface(instance, &amp;descriptor)
+        case:
+            fmt.eprintln(&quot;Unsupported SDL video driver:&quot;, sdl.GetCurrentVideoDriver())
+        }
+    } else {
+        #panic(&quot;This book targets macOS, Windows, and Linux desktop windows&quot;)
+    }
+    return result
+}
+
+platform_surface_destroy :: proc(platform: ^Platform_Surface) {
+    if platform.surface != nil { wgpu.SurfaceRelease(platform.surface) }
+    when ODIN_OS == .Darwin {
+        if platform.metal_view != nil { sdl.Metal_DestroyView(platform.metal_view) }
+    }
+    platform^ = {}
+}
+</code></pre></figure></details><details class="source-file"><summary>src/gpu.odin <span>104 lines</span></summary><p><a download href="../checkpoints/05/src/gpu.odin">Download this checkpoint’s src/gpu.odin</a></p><figure class="code-block"><figcaption>checkpoints/05/src/gpu.odin · complete file</figcaption><pre><code class="language-odin" data-source="checkpoints/05/src/gpu.odin">package character
+import &quot;core:fmt&quot;
+import &quot;base:runtime&quot;
+import &quot;base:intrinsics&quot;
+import sdl &quot;vendor:sdl3&quot;
+import wgpu &quot;vendor:wgpu&quot;
+
+GPU :: struct {
+    instance: wgpu.Instance,
+    platform: Platform_Surface,
+    adapter: wgpu.Adapter,
+    device: wgpu.Device,
+    queue: wgpu.Queue,
+    adapter_done, device_done: bool,
+}
+
+gpu_init :: proc(gpu: ^GPU, window: ^sdl.Window) -&gt; bool {
+    gpu.instance = wgpu.CreateInstance(nil)
+    if gpu.instance == nil {
+        fmt.eprintln(&quot;Cannot create a WebGPU instance&quot;)
+        return false
+    }
+    gpu.platform = platform_surface_create(gpu.instance, window)
+    if gpu.platform.surface == nil {
+        fmt.eprintln(&quot;Cannot connect WebGPU to the SDL window&quot;)
+        return false
+    }
+    return gpu_request_device(gpu)
+}
+
+gpu_destroy :: proc(gpu: ^GPU) {
+    if gpu.device != nil { _ = wgpu.DevicePoll(gpu.device, true, nil) }
+    if gpu.queue != nil { wgpu.QueueRelease(gpu.queue) }
+    if gpu.device != nil { wgpu.DeviceRelease(gpu.device) }
+    if gpu.adapter != nil { wgpu.AdapterRelease(gpu.adapter) }
+    platform_surface_destroy(&amp;gpu.platform)
+    if gpu.instance != nil { wgpu.InstanceRelease(gpu.instance) }
+    gpu^ = {}
+}
+
+// Process-lifetime storage: native diagnostic callbacks may arrive on other threads.
+gpu_fault: bool
+
+gpu_failed :: proc() -&gt; bool { return intrinsics.atomic_load(&amp;gpu_fault) }
+
+adapter_ready :: proc &quot;c&quot; (status: wgpu.RequestAdapterStatus, adapter: wgpu.Adapter,
+                          message: wgpu.StringView, userdata1, userdata2: rawptr) {
+    context = runtime.default_context()
+    gpu := cast(^GPU)userdata1
+    gpu.adapter_done = true
+    if status == .Success { gpu.adapter = adapter }
+    else { fmt.eprintln(&quot;Adapter request:&quot;, status, message) }
+}
+
+device_ready :: proc &quot;c&quot; (status: wgpu.RequestDeviceStatus, device: wgpu.Device,
+                         message: wgpu.StringView, userdata1, userdata2: rawptr) {
+    context = runtime.default_context()
+    gpu := cast(^GPU)userdata1
+    gpu.device_done = true
+    if status == .Success { gpu.device = device }
+    else { fmt.eprintln(&quot;Device request:&quot;, status, message) }
+}
+
+device_lost :: proc &quot;c&quot; (device: ^wgpu.Device, reason: wgpu.DeviceLostReason,
+                        message: wgpu.StringView, userdata1, userdata2: rawptr) {
+    context = runtime.default_context()
+    if reason == .Destroyed { return }
+    fmt.eprintln(&quot;Device lost:&quot;, reason, message)
+    intrinsics.atomic_store(&amp;gpu_fault, true)
+}
+
+uncaptured_error :: proc &quot;c&quot; (device: ^wgpu.Device, error_type: wgpu.ErrorType,
+                             message: wgpu.StringView, userdata1, userdata2: rawptr) {
+    context = runtime.default_context()
+    fmt.eprintln(&quot;WebGPU error:&quot;, error_type, message)
+    intrinsics.atomic_store(&amp;gpu_fault, true)
+}
+
+gpu_request_device :: proc(gpu: ^GPU) -&gt; bool {
+    options := wgpu.RequestAdapterOptions{
+        compatibleSurface = gpu.platform.surface,
+        powerPreference = .HighPerformance,
+        featureLevel = .Core,
+    }
+    _ = wgpu.InstanceRequestAdapter(gpu.instance, &amp;options, {
+        mode = .AllowSpontaneos, callback = adapter_ready, userdata1 = gpu,
+    })
+    // Verified wgpu-native 29.0.1.1 behavior: these two request callbacks run inline.
+    // Do not carry this assumption to Dawn or to a later native implementation.
+    assert(gpu.adapter_done, &quot;Pinned wgpu-native request contract changed&quot;)
+    if gpu.adapter == nil { return false }
+    descriptor := wgpu.DeviceDescriptor{
+        label = &quot;2D device&quot;, defaultQueue = {label = &quot;2D queue&quot;},
+        deviceLostCallbackInfo = {mode = .AllowSpontaneos, callback = device_lost},
+        uncapturedErrorCallbackInfo = {callback = uncaptured_error},
+    }
+    _ = wgpu.AdapterRequestDevice(gpu.adapter, &amp;descriptor, {
+        mode = .AllowSpontaneos, callback = device_ready, userdata1 = gpu,
+    })
+    assert(gpu.device_done, &quot;Pinned wgpu-native request contract changed&quot;)
+    if gpu.device == nil { return false }
+    gpu.queue = wgpu.DeviceGetQueue(gpu.device)
+    return gpu.queue != nil &amp;&amp; !gpu_failed()
+}
+</code></pre></figure></details></section><nav class="chapter-navigation" aria-label="Chapter navigation"><a href="../chapters/04-instance-and-surface.html"><span>← Previous Chapter</span><small>Instance and surface</small></a><a href="../contents.html">Contents</a><a href="../chapters/06-negotiate-the-images.html"><span>Next Chapter →</span><small>Negotiate the images</small></a></nav></article></main><footer class="page-footer"><span>Native Pixels · September 2026 edition</span><a href="../appendix/sources.html">Sources &amp; verification</a><a href="../LICENSE">MIT License</a><a href="#top">Back to top ↑</a></footer></div></body></html>

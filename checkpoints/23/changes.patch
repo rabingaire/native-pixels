@@ -1,0 +1,109 @@
+--- before/renderer/renderer.odin
++++ after/renderer/renderer.odin
+@@ -127,16 +127,19 @@
+ }
+ 
+ Sprite :: proc(r: ^State, texture: Texture_ID, position, size: [2]f32,
+-               tint: [4]f32 = {1, 1, 1, 1}) {
++               tint: [4]f32 = {1, 1, 1, 1},
++               uv_min: [2]f32 = {0, 0}, uv_max: [2]f32 = {1, 1}) {
+     assert(r.recording, "Sprite must be between Begin_Frame and End_Frame")
+     if r.count == MAX_SPRITES || texture == 0 || int(texture) > r.texture_count {
+         r.overflow = true
+         return
+     }
+     assert(size.x > 0 && size.y > 0)
++    assert(uv_min.x >= 0 && uv_min.y >= 0 && uv_max.x <= 1 && uv_max.y <= 1)
++    assert(uv_max.x > uv_min.x && uv_max.y > uv_min.y)
+     corners := [4][2]f32{{0, 0}, {1, 0}, {1, 1}, {0, 1}}
+     for corner, i in corners {
+-        r.vertices[r.count*4+i] = {position + corner*size, corner, tint}
++        r.vertices[r.count*4+i] = {position + corner*size, uv_min + corner*(uv_max-uv_min), tint}
+     }
+     r.texture_ids[r.count] = texture
+     r.count += 1
+--- before/game/game.odin
++++ after/game/game.odin
+@@ -8,6 +8,7 @@
+     speed: f32,
+     room, player: renderer.Texture_ID,
+     show_collision: bool,
++    animation: Animation,
+ }
+ Input :: struct { movement: [2]f32, toggle_collision: bool }
+ 
+@@ -16,7 +17,7 @@
+     g.speed = 72
+     g.room = renderer.Load_PNG(r, #load("../assets/room.png", []u8))
+     if g.room == 0 { return false }
+-    g.player = renderer.Load_PNG(r, #load("../assets/player.png", []u8))
++    g.player = renderer.Load_PNG(r, #load("../assets/player-walk.png", []u8))
+     return g.player != 0
+ }
+ 
+@@ -27,14 +28,20 @@
+     length_squared := direction.x*direction.x + direction.y*direction.y
+     if length_squared > 1 { direction /= math.sqrt(length_squared) }
+     delta := direction * g.speed * dt
++    previous := g.position
+     Move(&g.position, delta, SOLIDS[:])
++    Animate(&g.animation, direction, g.position-previous, dt)
+ }
+ 
+ Draw :: proc(g: ^State, r: ^renderer.State) {
+     renderer.Sprite(r, g.room, {0, 0}, WORLD_SIZE)
+     // Only the displayed position is snapped. Simulation retains subpixel motion.
+     feet := [2]f32{math.round(g.position.x), math.round(g.position.y)}
+-    renderer.Sprite(r, g.player, feet - [2]f32{16, 30}, {32, 32})
++    frame := Current_Frame(g.animation)
++    size := frame.size * PLAYER_TEXEL_SCALE
++    anchor := [2]f32{size.x/2, size.y-1}
++    renderer.Sprite(r, g.player, feet-anchor, size,
++                    uv_min = frame.min/SHEET_SIZE, uv_max = (frame.min+frame.size)/SHEET_SIZE)
+     if g.show_collision {
+         for solid in SOLIDS { outline(r, solid, {1, 0.15, 0.05, 0.85}) }
+         outline(r, Feet(g.position), {0.1, 1, 0.2, 1})
+--- before/game/animation.odin
++++ after/game/animation.odin
+@@ -0,0 +1,41 @@
++package game
++import "core:math"
++
++Facing :: enum { South, West, East, North }
++Animation :: struct { facing: Facing, phase: f32, moving: bool }
++FRAME_SECONDS :: f32(0.1)
++// Visual world units per source texel; independent of the collision footprint.
++PLAYER_TEXEL_SCALE :: f32(0.16)
++SHEET_SIZE :: [2]f32{1254, 1254}
++Sprite_Frame :: struct { min, size: [2]f32 }
++// Reviewed rectangles in source texels, including transparent padding.
++// The generated sheet is not perfectly registered, so draw each cropped frame
++// around its own bottom-center anchor at PLAYER_TEXEL_SCALE world units per texel.
++PLAYER_FRAMES := [4][4]Sprite_Frame{
++    {{{121, 29}, {134, 268}}, {{401, 29}, {138, 270}}, {{706, 29}, {137, 268}}, {{1002, 29}, {138, 269}}},
++    {{{116, 332}, {142, 274}}, {{401, 331}, {140, 273}}, {{705, 332}, {142, 274}}, {{998, 333}, {139, 272}}},
++    {{{112, 641}, {147, 276}}, {{400, 641}, {145, 272}}, {{705, 641}, {147, 277}}, {{1003, 639}, {145, 274}}},
++    {{{112, 945}, {145, 273}}, {{400, 946}, {142, 274}}, {{702, 946}, {145, 271}}, {{998, 944}, {142, 274}}},
++}
++
++Animate :: proc(animation: ^Animation, requested, displacement: [2]f32, dt: f32) {
++    assert(dt >= 0)
++    facing := animation.facing
++    if requested.x != 0 || requested.y != 0 {
++        if math.abs(requested.x) > math.abs(requested.y) {
++            facing = .East if requested.x > 0 else .West
++        } else { facing = .South if requested.y > 0 else .North }
++    }
++    if facing != animation.facing { animation.phase = 0 }
++    animation.facing = facing
++    animation.moving = displacement.x*displacement.x + displacement.y*displacement.y > 0.000001
++    if animation.moving {
++        animation.phase = math.mod(animation.phase+dt, FRAME_SECONDS*4)
++    } else { animation.phase = 0 }
++}
++
++Current_Frame :: proc(animation: Animation) -> Sprite_Frame {
++    column := 0
++    if animation.moving { column = min(int(animation.phase/FRAME_SECONDS), 3) }
++    return PLAYER_FRAMES[int(animation.facing)][column]
++}
