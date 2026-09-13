@@ -1,0 +1,34 @@
+--- before/src/renderer.odin
++++ after/src/renderer.odin
+@@ -5,6 +5,16 @@
+ 
+ renderer_frame :: proc(gpu: ^GPU, window: ^sdl.Window, renderer: ^Renderer) -> bool {
+ 	if !gpu_refresh_surface(gpu, window) { sdl.Delay(10); return !gpu_failed() }
++	// Temporary: transform and upload all four vertices on the CPU.
++	vertices := VERTICES
++	for &vertex in vertices {
++		pixel := [2]f32{120, 100} + vertex.position * [2]f32{48, 64}
++		vertex.position = {
++			2 * pixel.x / f32(gpu.config.width) - 1,
++			1 - 2 * pixel.y / f32(gpu.config.height),
++		}
++	}
++	wgpu.QueueWriteBuffer(gpu.queue, renderer.vertex_buffer, 0, &vertices, size_of(vertices))
+ 	frame := wgpu.SurfaceGetCurrentTexture(gpu.platform.surface)
+ 	// Release any returned handle on every exit path, including a failed acquisition.
+ 	defer if frame.texture != nil { wgpu.TextureRelease(frame.texture) }
+@@ -78,10 +88,10 @@
+ #assert(offset_of(Vertex, color) == 8)
+ 
+ VERTICES :: [4]Vertex {
+-	{{-0.25, 0.35}, {0.12, 0.78, 0.55, 1}},
+-	{{0.25, 0.35}, {0.12, 0.78, 0.55, 1}},
+-	{{0.25, -0.35}, {0.12, 0.78, 0.55, 1}},
+-	{{-0.25, -0.35}, {0.12, 0.78, 0.55, 1}},
++	{{0, 0}, {0.12, 0.78, 0.55, 1}},
++	{{1, 0}, {0.12, 0.78, 0.55, 1}},
++	{{1, 1}, {0.12, 0.78, 0.55, 1}},
++	{{0, 1}, {0.12, 0.78, 0.55, 1}},
+ }
+ INDICES :: [6]u16{0, 1, 2, 0, 2, 3}
+ 

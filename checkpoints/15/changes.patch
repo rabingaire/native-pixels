@@ -1,0 +1,63 @@
+--- before/src/main.odin
++++ after/src/main.odin
+@@ -36,7 +36,9 @@
+ 		position = {120, 100},
+ 		size     = {48, 64},
+ 		tint     = {1, 1, 1, 1},
++		speed    = 240,
+ 	}
++	previous_ticks := sdl.GetTicksNS()
+ 	running := true
+ 	for running {
+ 		event: sdl.Event
+@@ -49,6 +51,9 @@
+ 			}
+ 		}
+ 		if !running { break }
++		now := sdl.GetTicksNS()
++		dt := min(f64(now - previous_ticks) / 1_000_000_000.0, 0.05)
++		previous_ticks = now
+ 		wgpu.InstanceProcessEvents(gpu.instance)
+ 		if gpu_failed() { break }
+ 		width, height: c.int
+@@ -59,7 +64,7 @@
+ 		}
+ 		view_size := [2]f32{f32(width), f32(height)}
+ 		direction := read_movement(window)
+-		game_update(&game, direction)
++		game_update(&game, direction, f32(dt), view_size)
+ 		if !renderer_frame(
+ 			&gpu,
+ 			window,
+--- before/src/game.odin
++++ after/src/game.odin
+@@ -1,10 +1,12 @@
+ package character
++import "core:math"
+ import sdl "vendor:sdl3"
+ 
+ Game :: struct {
+ 	position: [2]f32,
+ 	size:     [2]f32,
+ 	tint:     [4]f32,
++	speed:    f32,
+ }
+ 
+ read_movement :: proc(window: ^sdl.Window) -> [2]f32 {
+@@ -18,8 +20,12 @@
+ 	return direction
+ }
+ 
+-game_update :: proc(game: ^Game, direction: [2]f32) {
+-	// Temporary input proof: color changes while any movement key is held.
+-	game.tint = {1, 1, 1, 1}
+-	if direction.x != 0 || direction.y != 0 { game.tint = {1, 0.35, 0.35, 1} }
++game_update :: proc(game: ^Game, direction: [2]f32, dt: f32, view_size: [2]f32) {
++	direction := direction
++	length_squared := direction.x * direction.x + direction.y * direction.y
++	if length_squared > 0 { direction /= math.sqrt(length_squared) }
++	game.position += direction * game.speed * dt
++	// If the window is smaller than the character, anchor that axis at zero.
++	game.position.x = clamp(game.position.x, 0, max(f32(0), view_size.x - game.size.x))
++	game.position.y = clamp(game.position.y, 0, max(f32(0), view_size.y - game.size.y))
+ }

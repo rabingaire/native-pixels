@@ -1,0 +1,45 @@
+--- before/src/main.odin
++++ after/src/main.odin
+@@ -1,11 +1,37 @@
+ package character
+ import "core:fmt"
+ import sdl "vendor:sdl3"
+-import wgpu "vendor:wgpu"
+ 
+ main :: proc() {
+-	fmt.println("Native Pixels: dependency probe")
+-	fmt.println("SDL runtime:", sdl.GetVersion())
+-	fmt.printf("wgpu-native packed version: 0x%08x\n", wgpu.GetVersion())
+-	fmt.println("Expected WebGPU binding:", wgpu.BINDINGS_VERSION_STRING)
++	if !sdl.Init({.VIDEO}) {
++		fmt.eprintln("SDL initialization:", sdl.GetError())
++		return
++	}
++	defer sdl.Quit()
++	flags: sdl.WindowFlags = {}
++	when ODIN_OS == .Darwin { flags += {.METAL} }
++	window := sdl.CreateWindow("Native Pixels", 960, 640, flags)
++	if window == nil {
++		fmt.eprintln("Window creation:", sdl.GetError())
++		return
++	}
++	defer sdl.DestroyWindow(window)
++	if !sdl.ShowWindow(window) {
++		fmt.eprintln("Show window:", sdl.GetError())
++		return
++	}
++	if !sdl.RaiseWindow(window) { fmt.eprintln("Window focus request:", sdl.GetError()) }
++
++	running := true
++	for running {
++		event: sdl.Event
++		for sdl.PollEvent(&event) {
++			#partial switch event.type {
++			case .QUIT, .WINDOW_CLOSE_REQUESTED:
++				running = false
++			}
++		}
++		if !running { break }
++		sdl.Delay(10)
++	}
+ }

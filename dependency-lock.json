@@ -1,0 +1,79 @@
+{
+  "verified": "2026-09-13",
+  "odinVersion": "dev-2026-09:a2fb372b7",
+  "sdlVersion": "3.4.16",
+  "sdlAssets": [
+    {
+      "name": "SDL3-3.4.16.tar.gz",
+      "sha256": "7322236cd12090c3eb40b9728be4d49c76f66ad17d04369584d4ecad5cf77c68",
+      "url": "https://github.com/libsdl-org/SDL/releases/download/release-3.4.16/SDL3-3.4.16.tar.gz"
+    },
+    {
+      "name": "SDL3-devel-3.4.16-VC.zip",
+      "sha256": "1a784cb2a5c64d56fe7a62090fe9d242d9865f235e4ea9678f1a6ba4e693e7de",
+      "url": "https://github.com/libsdl-org/SDL/releases/download/release-3.4.16/SDL3-devel-3.4.16-VC.zip"
+    }
+  ],
+  "assets": [
+    {
+      "component": "odin",
+      "name": "odin-linux-amd64-dev-2026-09.tar.gz",
+      "sha256": "167c3e1d7056419dad2e04bb3bd98715b7ff286d4c125f3c5a5ee337c6254283",
+      "url": "https://github.com/odin-lang/Odin/releases/download/dev-2026-09/odin-linux-amd64-dev-2026-09.tar.gz"
+    },
+    {
+      "component": "odin",
+      "name": "odin-linux-arm64-dev-2026-09.tar.gz",
+      "sha256": "c150c6f2d13668f3a1c4116ef96ea85c1ba1c9ededfd76081cd3c7d4ba92aa91",
+      "url": "https://github.com/odin-lang/Odin/releases/download/dev-2026-09/odin-linux-arm64-dev-2026-09.tar.gz"
+    },
+    {
+      "component": "odin",
+      "name": "odin-macos-amd64-dev-2026-09.tar.gz",
+      "sha256": "c1f6d6320218ec7e511093a87bdd599b72a8417a9d2a00de2c9691103562165b",
+      "url": "https://github.com/odin-lang/Odin/releases/download/dev-2026-09/odin-macos-amd64-dev-2026-09.tar.gz"
+    },
+    {
+      "component": "odin",
+      "name": "odin-macos-arm64-dev-2026-09.tar.gz",
+      "sha256": "3e6cbc1f247d8d14fe02c3151272d0a5b8d6d77acb7219f5b62914e4d95d97f7",
+      "url": "https://github.com/odin-lang/Odin/releases/download/dev-2026-09/odin-macos-arm64-dev-2026-09.tar.gz"
+    },
+    {
+      "component": "odin",
+      "name": "odin-windows-amd64-dev-2026-09.zip",
+      "sha256": "8ed8abd95b82e0af1eb7e86cb75f380fd8bde104947721817b35929f5fc19388",
+      "url": "https://github.com/odin-lang/Odin/releases/download/dev-2026-09/odin-windows-amd64-dev-2026-09.zip"
+    },
+    {
+      "component": "wgpu",
+      "name": "wgpu-linux-aarch64-release.zip",
+      "sha256": "015fcdf1dbae82e614a783cc38017e5399ae0927a889fe9b69c9b664bc61b47a",
+      "url": "https://github.com/gfx-rs/wgpu-native/releases/download/v29.0.1.1/wgpu-linux-aarch64-release.zip"
+    },
+    {
+      "component": "wgpu",
+      "name": "wgpu-linux-x86_64-release.zip",
+      "sha256": "95a4d90c071005a98d03eab348beaa6b07e16eb00d1dcdb9f8348f75eb97ec5a",
+      "url": "https://github.com/gfx-rs/wgpu-native/releases/download/v29.0.1.1/wgpu-linux-x86_64-release.zip"
+    },
+    {
+      "component": "wgpu",
+      "name": "wgpu-macos-aarch64-release.zip",
+      "sha256": "a5797a37b1adf720bcd5dcffb291edbbd5b7b14be0a3874c28e6393a655a7a3e",
+      "url": "https://github.com/gfx-rs/wgpu-native/releases/download/v29.0.1.1/wgpu-macos-aarch64-release.zip"
+    },
+    {
+      "component": "wgpu",
+      "name": "wgpu-macos-x86_64-release.zip",
+      "sha256": "8e2f7378548ddd0e2cf21e7d864dda46e953f0af724855a33778b85ead206d41",
+      "url": "https://github.com/gfx-rs/wgpu-native/releases/download/v29.0.1.1/wgpu-macos-x86_64-release.zip"
+    },
+    {
+      "component": "wgpu",
+      "name": "wgpu-windows-x86_64-msvc-release.zip",
+      "sha256": "7e67d7445c42aeb85e30f88930fd8d7d83ee769e3390aeb1ada75ebf3cf78132",
+      "url": "https://github.com/gfx-rs/wgpu-native/releases/download/v29.0.1.1/wgpu-windows-x86_64-msvc-release.zip"
+    }
+  ]
+}

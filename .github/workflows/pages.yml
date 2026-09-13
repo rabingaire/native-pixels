@@ -1,0 +1,56 @@
+name: Publish book
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Install pinned Odin formatter
+        run: |
+          mkdir -p build/formatter
+          curl -fsSL https://github.com/DanielGavin/ols/releases/download/dev-2026-08/ols-x86_64-unknown-linux-gnu.zip -o build/ols.zip
+          echo '6fbeef39393476ad8c0601ad2fcc75e5df789f1c4990809fe87cd6f3f3680807  build/ols.zip' | sha256sum --check
+          unzip build/ols.zip odinfmt-x86_64-unknown-linux-gnu -d build/formatter
+          chmod +x build/formatter/odinfmt-x86_64-unknown-linux-gnu
+      - name: Test formatting and reader reconstruction
+        run: node --test tools/*.test.mjs
+      - name: Generate, verify, and stage the book
+        run: node tools/site.mjs
+      - uses: actions/upload-pages-artifact@v4
+        if: github.event_name != 'pull_request'
+        with:
+          path: build/site
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/configure-pages@v5
+      - uses: actions/deploy-pages@v4
+        id: deployment

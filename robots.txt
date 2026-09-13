@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://rabingaire.com.np/native-pixels/sitemap.xml

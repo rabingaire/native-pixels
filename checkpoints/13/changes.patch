@@ -1,0 +1,52 @@
+--- before/src/main.odin
++++ after/src/main.odin
+@@ -9,7 +9,7 @@
+ 		return
+ 	}
+ 	defer sdl.Quit()
+-	flags: sdl.WindowFlags = {}
++	flags: sdl.WindowFlags = {.RESIZABLE, .HIGH_PIXEL_DENSITY}
+ 	when ODIN_OS == .Darwin { flags += {.METAL} }
+ 	window := sdl.CreateWindow("Native Pixels", 960, 640, flags)
+ 	if window == nil {
+@@ -38,6 +38,8 @@
+ 			#partial switch event.type {
+ 			case .QUIT, .WINDOW_CLOSE_REQUESTED:
+ 				running = false
++			case .WINDOW_PIXEL_SIZE_CHANGED, .WINDOW_RESTORED:
++				gpu.dirty = true
+ 			}
+ 		}
+ 		if !running { break }
+--- before/src/gpu.odin
++++ after/src/gpu.odin
+@@ -175,6 +175,7 @@
+ }
+ 
+ gpu_refresh_surface :: proc(gpu: ^GPU, window: ^sdl.Window) -> bool {
++	if .MINIMIZED in sdl.GetWindowFlags(window) { return false }
+ 	width, height: c.int
+ 	if !sdl.GetWindowSizeInPixels(window, &width, &height) {
+ 		fmt.eprintln("Drawable size:", sdl.GetError())
+--- before/src/renderer.odin
++++ after/src/renderer.odin
+@@ -1,14 +1,18 @@
+ package character
++import "core:c"
+ import "core:fmt"
+ import sdl "vendor:sdl3"
+ import wgpu "vendor:wgpu"
+ 
+ renderer_frame :: proc(gpu: ^GPU, window: ^sdl.Window, renderer: ^Renderer) -> bool {
+ 	if !gpu_refresh_surface(gpu, window) { sdl.Delay(10); return !gpu_failed() }
++	width, height: c.int
++	if !sdl.GetWindowSize(window, &width, &height) { return false }
++	if width <= 0 || height <= 0 { sdl.Delay(10); return true }
+ 	uniforms := Uniforms {
+ 		position  = {120, 100},
+ 		size      = {48, 64},
+-		view_size = {f32(gpu.config.width), f32(gpu.config.height)},
++		view_size = {f32(width), f32(height)},
+ 		camera    = {0, 0},
+ 		tint      = {1, 1, 1, 1},
+ 	}

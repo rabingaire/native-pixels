@@ -1,0 +1,145 @@
+--- before/src/renderer.odin
++++ after/src/renderer.odin
+@@ -5,16 +5,14 @@
+ 
+ renderer_frame :: proc(gpu: ^GPU, window: ^sdl.Window, renderer: ^Renderer) -> bool {
+ 	if !gpu_refresh_surface(gpu, window) { sdl.Delay(10); return !gpu_failed() }
+-	// Temporary: transform and upload all four vertices on the CPU.
+-	vertices := VERTICES
+-	for &vertex in vertices {
+-		pixel := [2]f32{120, 100} + vertex.position * [2]f32{48, 64}
+-		vertex.position = {
+-			2 * pixel.x / f32(gpu.config.width) - 1,
+-			1 - 2 * pixel.y / f32(gpu.config.height),
+-		}
++	uniforms := Uniforms {
++		position  = {120, 100},
++		size      = {48, 64},
++		view_size = {f32(gpu.config.width), f32(gpu.config.height)},
++		camera    = {0, 0},
++		tint      = {1, 1, 1, 1},
+ 	}
+-	wgpu.QueueWriteBuffer(gpu.queue, renderer.vertex_buffer, 0, &vertices, size_of(vertices))
++	wgpu.QueueWriteBuffer(gpu.queue, renderer.uniform_buffer, 0, &uniforms, size_of(uniforms))
+ 	frame := wgpu.SurfaceGetCurrentTexture(gpu.platform.surface)
+ 	// Release any returned handle on every exit path, including a failed acquisition.
+ 	defer if frame.texture != nil { wgpu.TextureRelease(frame.texture) }
+@@ -60,6 +58,7 @@
+ 	if pass == nil { return false }
+ 	defer wgpu.RenderPassEncoderRelease(pass)
+ 	wgpu.RenderPassEncoderSetPipeline(pass, renderer.pipeline)
++	wgpu.RenderPassEncoderSetBindGroup(pass, 0, renderer.bind_group)
+ 	wgpu.RenderPassEncoderSetVertexBuffer(pass, 0, renderer.vertex_buffer, 0, size_of(VERTICES))
+ 	wgpu.RenderPassEncoderSetIndexBuffer(pass, renderer.index_buffer, .Uint16, 0, size_of(INDICES))
+ 	wgpu.RenderPassEncoderDrawIndexed(pass, 6, 1, 0, 0, 0)
+@@ -95,10 +94,26 @@
+ }
+ INDICES :: [6]u16{0, 1, 2, 0, 2, 3}
+ 
++Uniforms :: struct #align (16) {
++	position:  [2]f32,
++	size:      [2]f32,
++	view_size: [2]f32,
++	camera:    [2]f32,
++	tint:      [4]f32,
++}
++#assert(size_of(Uniforms) == 48)
++#assert(offset_of(Uniforms, position) == 0)
++#assert(offset_of(Uniforms, size) == 8)
++#assert(offset_of(Uniforms, view_size) == 16)
++#assert(offset_of(Uniforms, camera) == 24)
++#assert(offset_of(Uniforms, tint) == 32)
++
+ Renderer :: struct {
+-	pipeline:      wgpu.RenderPipeline,
+-	vertex_buffer: wgpu.Buffer,
+-	index_buffer:  wgpu.Buffer,
++	pipeline:       wgpu.RenderPipeline,
++	vertex_buffer:  wgpu.Buffer,
++	index_buffer:   wgpu.Buffer,
++	uniform_buffer: wgpu.Buffer,
++	bind_group:     wgpu.BindGroup,
+ }
+ 
+ renderer_init :: proc(renderer: ^Renderer, gpu: ^GPU) -> bool {
+@@ -129,8 +144,41 @@
+ 	if shader == nil { return false }
+ 	defer wgpu.ShaderModuleRelease(shader)
+ 	if gpu_failed() { return false }
++	renderer.uniform_buffer = wgpu.DeviceCreateBuffer(gpu.device, &wgpu.BufferDescriptor {
++			label = "character uniforms",
++			size  = size_of(Uniforms),
++			usage = {.Uniform, .CopyDst},
++		})
++	if renderer.uniform_buffer == nil { return false }
++	binding_layout := wgpu.BindGroupLayoutEntry {
++		binding = 0,
++		visibility = {.Vertex},
++		buffer = {type = .Uniform, minBindingSize = size_of(Uniforms)},
++	}
++	group_layout := wgpu.DeviceCreateBindGroupLayout(gpu.device, &wgpu.BindGroupLayoutDescriptor {
++			label      = "character resource interface",
++			entryCount = 1,
++			entries    = &binding_layout,
++		})
++	if group_layout == nil { return false }
++	defer wgpu.BindGroupLayoutRelease(group_layout)
++	entry := wgpu.BindGroupEntry {
++		binding = 0,
++		buffer  = renderer.uniform_buffer,
++		offset  = 0,
++		size    = size_of(Uniforms),
++	}
++	renderer.bind_group = wgpu.DeviceCreateBindGroup(gpu.device, &wgpu.BindGroupDescriptor {
++			label      = "character resources",
++			layout     = group_layout,
++			entryCount = 1,
++			entries    = &entry,
++		})
++	if renderer.bind_group == nil { return false }
+ 	layout := wgpu.DeviceCreatePipelineLayout(gpu.device, &wgpu.PipelineLayoutDescriptor {
+-			label = "empty resource interface",
++			label                = "character pipeline interface",
++			bindGroupLayoutCount = 1,
++			bindGroupLayouts     = &group_layout,
+ 		})
+ 	if layout == nil { return false }
+ 	defer wgpu.PipelineLayoutRelease(layout)
+@@ -172,6 +220,8 @@
+ }
+ 
+ renderer_destroy :: proc(renderer: ^Renderer) {
++	if renderer.bind_group != nil { wgpu.BindGroupRelease(renderer.bind_group) }
++	if renderer.uniform_buffer != nil { wgpu.BufferRelease(renderer.uniform_buffer) }
+ 	if renderer.index_buffer != nil { wgpu.BufferRelease(renderer.index_buffer) }
+ 	if renderer.vertex_buffer != nil { wgpu.BufferRelease(renderer.vertex_buffer) }
+ 	if renderer.pipeline != nil { wgpu.RenderPipelineRelease(renderer.pipeline) }
+--- before/shaders/character.wgsl
++++ after/shaders/character.wgsl
+@@ -1,3 +1,12 @@
++struct Uniforms {
++    position: vec2f,
++    size: vec2f,
++    view_size: vec2f,
++    camera: vec2f,
++    tint: vec4f,
++}
++@group(0) @binding(0) var<uniform> uniforms: Uniforms;
++
+ struct Vertex_Out {
+     @builtin(position) clip_position: vec4f,
+     @location(0) color: vec4f,
+@@ -6,8 +15,11 @@
+ @vertex
+ fn vs_main(@location(0) position: vec2f, @location(1) color: vec4f) -> Vertex_Out {
+     var out: Vertex_Out;
+-    out.clip_position = vec4f(position, 0.0, 1.0);
+-    out.color = color;
++    let pixel = uniforms.position + position * uniforms.size - uniforms.camera;
++    let ndc = vec2f(2.0 * pixel.x / uniforms.view_size.x - 1.0,
++                   1.0 - 2.0 * pixel.y / uniforms.view_size.y);
++    out.clip_position = vec4f(ndc, 0.0, 1.0);
++    out.color = color * uniforms.tint;
+     return out;
+ }
+ 

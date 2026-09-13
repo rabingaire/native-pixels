@@ -1,0 +1,35 @@
+--- before/game/game.odin
++++ after/game/game.odin
+@@ -31,3 +31,11 @@
+ 	g.position.x = clamp(g.position.x, f32(28), f32(358))
+ 	g.position.y = clamp(g.position.y, f32(51), f32(239))
+ }
++
++Draw :: proc(g: ^State, r: ^renderer.State) {
++	renderer.Sprite(r, g.room, {0, 0}, WORLD_SIZE)
++	// Only the displayed position is snapped. Simulation retains subpixel motion.
++	feet := [2]f32{math.round(g.position.x), math.round(g.position.y)}
++	renderer.Sprite(r, g.player, feet - [2]f32{16, 30}, {32, 32})
++
++}
+--- before/src/main.odin
++++ after/src/main.odin
+@@ -2,7 +2,6 @@
+ import game "../game"
+ import renderer "../renderer"
+ import "core:fmt"
+-import "core:math"
+ import sdl "vendor:sdl3"
+ 
+ main :: proc() {
+@@ -50,9 +49,7 @@
+ 		}
+ 		game.Update(&world, input, f32(dt))
+ 		renderer.Begin_Frame(&rendering, game.WORLD_SIZE)
+-		renderer.Sprite(&rendering, world.room, {0, 0}, game.WORLD_SIZE)
+-		feet := [2]f32{math.round(world.position.x), math.round(world.position.y)}
+-		renderer.Sprite(&rendering, world.player, feet - [2]f32{16, 30}, {32, 32})
++		game.Draw(&world, &rendering)
+ 		result := renderer.End_Frame(&rendering)
+ 		if result == .Fatal { fmt.eprintln("Rendering stopped after a GPU or API error"); break }
+ 		if result == .Skipped { sdl.Delay(10) }
